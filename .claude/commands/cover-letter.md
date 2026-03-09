@@ -10,7 +10,7 @@ Draft a tailored cover letter for a specific job. Only invoke this when the user
 
 If not already in context from a `/customize-resume` session, ask for:
 1. **Job Description**: URL preferred; paste or PDF if URL is inaccessible
-2. **Resume**: Google Doc URL or file
+2. **Resume**: Read `resume-base.md` from the project folder. Confirm with user which version to use (base or a specific tailored copy from `resumes/`)
 
 Also ask:
 3. **Tone preference**: Professional/formal, conversational, or hybrid?

@@ -1,0 +1,17 @@
+# Personal resume data — stays local
+resume-base.md
+resumes/
+applications.json
+
+# Resume files (personal)
+*.docx
+*.pdf
+Jason English Resume*
+
+# OS junk
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editor
+.vscode/

@@ -1,3 +1,7 @@
+---
+description: Tailor your resume to a specific job description. Creates a job-specific copy, reorders bullets by relevance, suggests revisions, identifies gaps, and produces formatted or Workday-friendly output — all with explicit approval at every step.
+---
+
 # Customize Resume
 
 Tailor a job-specific copy of the base resume to a job description, with full approval gates at every step. No content changes without explicit user approval.

@@ -1,3 +1,7 @@
+---
+description: First-time onboarding for the Claude Job Search Toolkit. Checks setup status, helps create resume-base.md from your existing resume, and registers your formatting template.
+---
+
 # Setup
 
 First-time onboarding for the Claude Job Search Toolkit. Guides the user through creating their base resume and configuring the project.

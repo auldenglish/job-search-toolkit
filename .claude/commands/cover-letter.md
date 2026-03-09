@@ -1,3 +1,7 @@
+---
+description: Draft a tailored cover letter for a specific job. Uses your resume and the job description, flags any claims that can't be sourced from your resume, and requires approval before finalizing.
+---
+
 # Cover Letter
 
 Draft a tailored cover letter for a specific job. Only invoke this when the user explicitly asks for a cover letter.

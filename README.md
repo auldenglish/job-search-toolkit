@@ -31,6 +31,17 @@ All applications are logged to `applications.json` with status, dates, notes, an
 
 - [Claude Code](https://claude.ai/code) installed and configured
 - A Claude account with access to the model you want to use
+- [Node.js](https://nodejs.org/) (for `.docx` generation)
+- [Python 3](https://python.org/) (for `.docx` generation)
+
+After cloning, install the required packages:
+```bash
+bash install-deps.sh
+```
+
+This installs:
+- `docx` (npm) — used to generate `.docx` files
+- `defusedxml` (pip) — required by the docx skill's XML tools
 
 ---
 

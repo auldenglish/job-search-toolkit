@@ -114,19 +114,56 @@ Wait for user responses. Draft bullets only after the user provides examples. Ap
 
 Ask which output(s) to produce:
 
-**A) Formatted .docx** — Styled to match `Jason English Resume - Base.docx` (formatting template in project folder). Use the `/docx` skill to generate.
+**A) Formatted .docx** — Styled to match the formatting template.
 
-**B) Workday-friendly .docx** — Plain, ATS-optimized format designed to parse correctly in Workday's import. Rules:
-- Single column, no tables, no text boxes
-- Section headers in ALL CAPS: `WORK EXPERIENCE`, `EDUCATION`, `SKILLS`
-- Dates spelled out: `Month YYYY – Month YYYY`
-- Simple bullet points (hyphen), no nested lists
-- No special characters, no hyperlinks (plain text URLs only)
-- Standard 1-inch margins, single font (Calibri 11pt), no header/footer
+**B) Workday-friendly .docx** — Plain, ATS-optimized format.
 
 **C) Both**
 
-Use the `/docx` skill for whichever format(s) are selected.
+### Generating .docx output
+
+**Check for `docx-template.js`** in the project root before generating.
+
+- If it exists: use it directly — `require('./docx-template')` in the generation script.
+- If it does not exist: say "Run `/init-docx-template` first — it unpacks your formatting template and generates the `docx-template.js` module (one-time setup, takes under a minute)." Stop until user runs it.
+
+### Generation script
+
+Write a temp script `generate_resume.js` to the project folder (not `/tmp`). Structure:
+
+```javascript
+const {
+  nameBlock, titleBlock, contactBlock, sectionHeader,
+  companyLine, roleLine, italicNote, bullet, subBullet,
+  summaryBlock, educationBlock,
+  wSection, wHeader, wRole, wNote, wBullet, wPlain,
+  generateDocs,
+} = require('./docx-template');
+
+const formattedChildren = [ /* ...paragraphs for styled output */ ];
+const workdayChildren   = [ /* ...paragraphs for Workday output */ ];
+
+generateDocs(formattedChildren, workdayChildren, 'resumes/[working-copy-base]', {
+  formatted: true,  // set false if only B was selected
+  workday:   true,  // set false if only A was selected
+}).then(r => console.log('Written:', r));
+```
+
+Run with:
+```bash
+export NODE_PATH="$(npm root -g)"
+NODE_EXE="$(which node 2>/dev/null || echo '/c/Program Files/nodejs/node.exe')"
+"$NODE_EXE" generate_resume.js
+```
+
+Delete `generate_resume.js` after successful output.
+
+Validate each output file:
+```bash
+python -c "import zipfile; zipfile.ZipFile('resumes/[file].docx').namelist()" && echo "Valid ZIP"
+```
+
+**Workday sub-bullets:** Flatten to top-level bullets with a leading dash — do not use nested lists.
 
 ---
 

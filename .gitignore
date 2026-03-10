@@ -13,5 +13,23 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
+# Generated docx module — user-specific, do not commit
+# Regenerate with /init-docx-template
+docx-template.js
+
+# Temp generation scripts
+generate_resume.js
+generate_resumes.js
+
+# Temp docx build artifacts
+docx_scripts/
+template_unpacked/
+
+# Node
+node_modules/
+
+# Claude local session permissions (machine-specific)
+.claude/settings.local.json
+
 # Editor
 .vscode/

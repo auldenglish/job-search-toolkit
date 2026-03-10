@@ -124,46 +124,25 @@ Ask which output(s) to produce:
 
 **Check for `docx-template.js`** in the project root before generating.
 
-- If it exists: use it directly — `require('./docx-template')` in the generation script.
 - If it does not exist: say "Run `/init-docx-template` first — it unpacks your formatting template and generates the `docx-template.js` module (one-time setup, takes under a minute)." Stop until user runs it.
 
-### Generation script
+### Running the generator
 
-Write a temp script `generate_resume.js` to the project folder (not `/tmp`). Structure:
+`generate.js` is a persistent script in the project root. It parses the markdown working copy directly — no temp script needed.
 
-```javascript
-const {
-  nameBlock, titleBlock, contactBlock, sectionHeader,
-  companyLine, roleLine, italicNote, bullet, subBullet,
-  summaryBlock, educationBlock,
-  wSection, wHeader, wRole, wNote, wBullet, wPlain,
-  generateDocs,
-} = require('./docx-template');
-
-const formattedChildren = [ /* ...paragraphs for styled output */ ];
-const workdayChildren   = [ /* ...paragraphs for Workday output */ ];
-
-generateDocs(formattedChildren, workdayChildren, 'resumes/[working-copy-base]', {
-  formatted: true,  // set false if only B was selected
-  workday:   true,  // set false if only A was selected
-}).then(r => console.log('Written:', r));
-```
-
-Run with:
 ```bash
 export NODE_PATH="$(npm root -g)"
 NODE_EXE="$(which node 2>/dev/null || echo '/c/Program Files/nodejs/node.exe')"
-"$NODE_EXE" generate_resume.js
+"$NODE_EXE" generate.js resumes/[working-copy].md
 ```
 
-Delete `generate_resume.js` after successful output.
-
-Validate each output file:
+For a single format only:
 ```bash
-python -c "import zipfile; zipfile.ZipFile('resumes/[file].docx').namelist()" && echo "Valid ZIP"
+"$NODE_EXE" generate.js resumes/[working-copy].md --formatted-only
+"$NODE_EXE" generate.js resumes/[working-copy].md --workday-only
 ```
 
-**Workday sub-bullets:** Flatten to top-level bullets with a leading dash — do not use nested lists.
+The script parses the markdown, builds both documents, writes the output files, validates them (ZIP magic bytes), and reports sizes. No cleanup needed.
 
 ---
 

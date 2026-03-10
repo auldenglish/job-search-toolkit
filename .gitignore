@@ -25,5 +25,11 @@ generate_resumes.js
 docx_scripts/
 template_unpacked/
 
+# Node
+node_modules/
+
+# Claude local session permissions (machine-specific)
+.claude/settings.local.json
+
 # Editor
 .vscode/

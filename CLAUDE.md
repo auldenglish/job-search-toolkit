@@ -36,9 +36,33 @@ plus helper functions and a `generateDocs()` function used by `/customize-resume
 - Do not re-extract template values manually — always use or regenerate this module.
 
 ## Application Tracking
-All job applications are tracked in `applications.json` in this directory.
-- Always read `applications.json` before adding a new entry to avoid duplicates
-- Use incremental integer IDs (check the highest existing ID and increment by 1)
+All job applications are tracked in a **PostgreSQL database** (migrated from `applications.json` on 2026-04-07).
+
+### Connection
+- Container: `job-search-db` (Docker, port 5432)
+- Database: `job_search`, User: `jobsearch`, Password: `jobsearch`
+- Start if not running: `cd job_search && docker compose up -d`
+
+### How to read/write
+Use `db.js` — a thin Node.js wrapper in the project root:
+```bash
+NODE_EXE="$(which node 2>/dev/null || echo '/c/Program Files/nodejs/node.exe')"
+"$NODE_EXE" -e "const db = require('./db'); db.getAll().then(r => console.log(JSON.stringify(r, null, 2)))"
+```
+
+Or query directly via psql:
+```bash
+docker exec -it job-search-db psql -U jobsearch -d job_search
+```
+
+### Adding a new application
+Use `db.insert({...})` — the `id` is assigned automatically by SERIAL (no manual ID tracking needed).
+
+### Schema
+See `schema.sql`. Key fields: `id` (SERIAL PK), `company`, `role`, `jd_url`, `date_applied`, `status`, `resume_version`, `cover_letter`, `notes`, `next_activity_date`, `follow_up_date`, `todos` (JSONB), `comments` (JSONB).
+
+### Legacy file
+`applications.json` is kept as a backup but is no longer the source of truth. Do not write to it.
 
 ## General Rules
 - Never reword resume or cover letter content without explicit user approval

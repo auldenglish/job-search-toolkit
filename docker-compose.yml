@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: job-search-db
+    environment:
+      POSTGRES_DB: job_search
+      POSTGRES_USER: jobsearch
+      POSTGRES_PASSWORD: jobsearch
+    ports:
+      - "5432:5432"
+    volumes:
+      - job-search-pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  job-search-pgdata:

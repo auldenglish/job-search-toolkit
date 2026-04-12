@@ -18,13 +18,33 @@ const path = require('path');
 const { Paragraph, TextRun, TabStopType } = require('docx');
 
 const {
-  FONT, SZ, DATE_TAB,
+  FONT, SZ, DATE_TAB, W_FONT, W_SZ,
   nameBlock, titleBlock, contactBlock, sectionHeader,
   companyLine, roleLine, italicNote, bullet, subBullet,
   summaryBlock, educationBlock,
   wSection, wHeader, wRole, wNote, wBullet, wPlain,
   generateDocs,
 } = require('./docx-template');
+
+// ---------------------------------------------------------------------------
+// Inline markdown parser — converts **bold** segments to TextRun arrays
+// ---------------------------------------------------------------------------
+
+function inlineRuns(text, font, size) {
+  const runs = [];
+  const re = /\*\*(.+?)\*\*/g;
+  let last = 0, m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) runs.push(new TextRun({ text: text.slice(last, m.index), font, size }));
+    runs.push(new TextRun({ text: m[1], font, size, bold: true }));
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) runs.push(new TextRun({ text: text.slice(last), font, size }));
+  return runs;
+}
+
+function fmtRuns(text)  { return text.includes('**') ? inlineRuns(text, FONT,   SZ.body) : text; }
+function wdRuns(text)   { return text.includes('**') ? inlineRuns(text, W_FONT, W_SZ)    : text; }
 
 // ---------------------------------------------------------------------------
 // Args
@@ -157,6 +177,44 @@ function parseResume(content) {
 }
 
 // ---------------------------------------------------------------------------
+// Job grouping helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Group consecutive job entries that share the same company + location
+ * under a single company header. Returns array of { company, location, roles[] }.
+ */
+function groupByCompany(jobs) {
+  const groups = [];
+  for (const job of jobs) {
+    const last = groups[groups.length - 1];
+    if (last && last.company === job.company && last.location === job.location) {
+      last.roles.push(job);
+    } else {
+      groups.push({ company: job.company, location: job.location, roles: [job] });
+    }
+  }
+  return groups;
+}
+
+/**
+ * Compute overall date span for a group of roles.
+ * Roles are listed newest-first, so roles[0] has the latest end date
+ * and roles[last] has the earliest start date.
+ * Returns e.g. "Nov 2022 – Feb 2026".
+ */
+function companyDateSpan(roles) {
+  if (roles.length === 0) return '';
+  const split = (dr) => dr ? dr.split(/\s*[–\-]\s*/) : [];
+  const first = split(roles[0].dateRange);
+  const last  = split(roles[roles.length - 1].dateRange);
+  const end   = first[1]?.trim() || first[0]?.trim() || '';
+  const start = last[0]?.trim() || '';
+  if (roles.length === 1) return roles[0].dateRange || '';
+  return start && end ? `${start} – ${end}` : roles[0].dateRange || '';
+}
+
+// ---------------------------------------------------------------------------
 // Build formatted document children
 // ---------------------------------------------------------------------------
 
@@ -186,32 +244,27 @@ function buildFormatted(parsed) {
       }
 
     } else {
-      // Experience and any other section with job entries
+      // Render standalone bullets first (e.g. Independent Projects), then job groups.
       for (const item of section.items) {
-        if (item.type !== 'job') continue;
+        if (item.type === 'bullet') children.push(bullet(fmtRuns(item.text)));
+      }
 
-        if (item.role && item.company) {
-          // Standard entry: company line + role line
-          children.push(companyLine(item.company, item.location));
-          children.push(roleLine(item.role, item.dateRange));
-        } else {
-          // Historical block: company + location + date all on one line
-          children.push(new Paragraph({
-            tabStops: [{ type: TabStopType.RIGHT, position: DATE_TAB }],
-            spacing: { before: 200, after: 20 },
-            children: [
-              new TextRun({ text: item.company,                   font: FONT, size: SZ.company, bold: true }),
-              new TextRun({ text: '  ' + (item.location || ''),  font: FONT, size: SZ.body }),
-              new TextRun({ text: '\t' + (item.dateRange || ''), font: FONT, size: SZ.body }),
-            ],
-          }));
-        }
+      // Experience and any other section with job entries.
+      // Group consecutive entries that share the same company under one company header.
+      const groups = groupByCompany(section.items.filter(i => i.type === 'job'));
 
-        for (const note of item.notes) {
-          children.push(italicNote(note));
-        }
-        for (const b of item.bullets) {
-          children.push(b.level === 0 ? bullet(b.text) : subBullet(b.text));
+      for (const group of groups) {
+        // Compute overall date span: earliest start → latest end across all roles in group
+        const overallDate = companyDateSpan(group.roles);
+        children.push(companyLine(group.company, group.location, overallDate));
+
+        for (const role of group.roles) {
+          if (role.role) {
+            // Named role: bold + underlined title, date in parens
+            children.push(roleLine(role.role, role.dateRange));
+          }
+          for (const note of role.notes)   children.push(italicNote(note));
+          for (const b    of role.bullets) children.push(b.level === 0 ? bullet(fmtRuns(b.text)) : subBullet(b.text));
         }
       }
     }
@@ -250,6 +303,11 @@ function buildWorkday(parsed) {
 
     } else {
       for (const item of section.items) {
+        if (item.type === 'bullet') {
+          children.push(wBullet(wdRuns(item.text)));
+          continue;
+        }
+
         if (item.type !== 'job') continue;
 
         if (item.role && item.company) {
@@ -262,7 +320,7 @@ function buildWorkday(parsed) {
         }
 
         for (const note of item.notes)    children.push(wNote(note));
-        for (const b    of item.bullets)  children.push(wBullet(b.text)); // sub-bullets flattened
+        for (const b    of item.bullets)  children.push(wBullet(wdRuns(b.text))); // sub-bullets flattened
       }
     }
   }

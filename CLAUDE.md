@@ -58,6 +58,12 @@ docker exec -it job-search-db psql -U jobsearch -d job_search
 ### Adding a new application
 Use `db.insert({...})` — the `id` is assigned automatically by SERIAL (no manual ID tracking needed).
 
+**Valid statuses** — only use these; do not invent new ones:
+- `submitted` — application sent; use this for new submissions at the time of applying
+- `in_progress` — resume/materials being prepared, not yet submitted
+- `stalled` — no activity / waiting
+- `closed` — position filled, withdrawn, or rejected
+
 ### Schema
 See `schema.sql`. Key fields: `id` (SERIAL PK), `company`, `role`, `jd_url`, `date_applied`, `status`, `resume_version`, `cover_letter`, `notes`, `next_activity_date`, `follow_up_date`, `todos` (JSONB), `comments` (JSONB).
 

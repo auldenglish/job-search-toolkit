@@ -11,22 +11,27 @@ Tailor a job-specific copy of the base resume to a job description, with full ap
 ## Step 1 — Gather Inputs
 
 1. **Job Description**: Ask for the JD URL. If inaccessible (behind login/paywall), ask user to paste the text or provide a PDF.
-2. **Base resume**: Read `resume-base.md` from the current project folder. Confirm with the user: "I'll be working from `resume-base.md` — is that correct, or do you want to use a different version?"
+2. **Base resume**: Note that you'll be using `resume-base-v2.md` by default. Ask in Step 2 if the user prefers a different version.
 
-Do not proceed until both are available.
+Do not proceed until the JD is available.
 
 ---
 
 ## Step 2 — Create Working Copy
 
-Create a job-specific copy of the base resume:
-- Path: `resumes/[company-slug]-[role-slug]-[YYYY-MM-DD].md`
-- Example: `resumes/acme-senior-pm-2026-03-09.md`
-- Copy all content verbatim from `resume-base.md`
+1. **Base resume**: Read `resume-base-v2.md` from the current project folder. If the user wants a different version, ask which one to use instead.
 
-All edits during this session go into the working copy. **`resume-base.md` is never modified during a customization session.**
+2. **Company-title subfolder**: Parse the company and role from the user's input (or from the JD) to create a logical folder name. Example:
+   - Company: Acme, Role: Senior PM → folder: `resumes/acme-senior-pm/`
+   - Create this folder if it doesn't exist.
 
-Confirm the working copy filename with the user before proceeding.
+3. **Working copy path**: `resumes/[company-slug]-[role-slug]/[company-slug]-[role-slug]-[YYYY-MM-DD].md`
+   - Example: `resumes/acme-senior-pm/acme-senior-pm-2026-03-09.md`
+   - Copy all content verbatim from `resume-base-v2.md`
+
+All edits during this session go into the working copy. **The base resume is never modified during a customization session.**
+
+Confirm the working copy path with the user before proceeding.
 
 ---
 
@@ -62,18 +67,18 @@ Wait for approval before proceeding.
 
 ## Step 5 — Work History Reorder
 
-For each role with bullets, propose reordering bullets to surface the most JD-relevant accomplishments first. No wording changes.
+For each role with bullets, reorder bullets to surface the most JD-relevant accomplishments first. **No wording changes, no approval needed** — this is purely reordering existing content.
 
-Present each role:
+Present the reordered bullets role-by-role:
 ```
 [Title] | [Company]
-Proposed bullet order (verbatim, no wording changes):
+Reordered bullets (most to least relevant to JD):
 1. [most relevant bullet]
 2. [next]
 ...
 ```
 
-Ask if the user wants to approve role-by-role or all at once. Wait for approval before proceeding.
+Apply all reordering automatically and proceed to Step 6. Do not wait for approval.
 
 ---
 
@@ -133,16 +138,20 @@ Ask which output(s) to produce:
 ```bash
 export NODE_PATH="$(npm root -g)"
 NODE_EXE="$(which node 2>/dev/null || echo '/c/Program Files/nodejs/node.exe')"
-"$NODE_EXE" generate.js resumes/[working-copy].md
+"$NODE_EXE" generate.js resumes/[company-slug]-[role-slug]/[working-copy].md
 ```
 
 For a single format only:
 ```bash
-"$NODE_EXE" generate.js resumes/[working-copy].md --formatted-only
-"$NODE_EXE" generate.js resumes/[working-copy].md --workday-only
+"$NODE_EXE" generate.js resumes/[company-slug]-[role-slug]/[working-copy].md --formatted-only
+"$NODE_EXE" generate.js resumes/[company-slug]-[role-slug]/[working-copy].md --workday-only
 ```
 
-The script parses the markdown, builds both documents, writes the output files, validates them (ZIP magic bytes), and reports sizes. No cleanup needed.
+The script parses the markdown, builds both document formats, writes the output files to the same company-title subfolder, generates PDF versions automatically, and validates all output. No cleanup needed.
+
+Output files are saved to: `resumes/[company-slug]-[role-slug]/`
+- `[name]-formatted.docx` and `.pdf`
+- `[name]-workday.docx` and `.pdf`
 
 ---
 

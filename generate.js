@@ -15,6 +15,7 @@
 
 const fs   = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const { Paragraph, TextRun, TabStopType } = require('docx');
 
 const {
@@ -345,6 +346,52 @@ function isValidDocx(filePath) {
 }
 
 // ---------------------------------------------------------------------------
+// PDF Conversion: attempt multiple methods
+// ---------------------------------------------------------------------------
+
+function convertDocxToPdf(docxPath) {
+  const pdfPath = docxPath.replace(/\.docx$/, '.pdf');
+  const absDocx = path.resolve(docxPath);
+  const absDir  = path.dirname(absDocx);
+
+  try {
+    // Try libreoffice (cross-platform)
+    try {
+      execSync(`libreoffice --headless --convert-to pdf --outdir "${absDir}" "${absDocx}"`, {
+        stdio: 'pipe',
+        timeout: 30000
+      });
+      if (fs.existsSync(pdfPath)) return pdfPath;
+    } catch {
+      // libreoffice not available, try next method
+    }
+
+    // Try PowerShell + Word COM (Windows only)
+    if (process.platform === 'win32') {
+      const psScript = `
+$doc = [System.IO.Path]::GetFullPath("${absDocx}")
+$pdf = [System.IO.Path]::GetFullPath("${pdfPath}")
+$word = New-Object -ComObject Word.Application
+$word.Visible = $false
+$doc_obj = $word.Documents.Open($doc)
+$doc_obj.SaveAs($pdf, 17)  # 17 = wdFormatPDF
+$doc_obj.Close()
+$word.Quit()
+`;
+      execSync(`powershell -NoProfile -Command "${psScript.replace(/"/g, '\\"')}"`, {
+        stdio: 'pipe',
+        timeout: 30000
+      });
+      if (fs.existsSync(pdfPath)) return pdfPath;
+    }
+  } catch (err) {
+    // Silently fail - PDF generation is a nice-to-have
+  }
+
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -369,6 +416,13 @@ async function main() {
     const size  = fs.statSync(filePath).size;
     console.log(`${label}: ${filePath}  (${(size / 1024).toFixed(1)} KB)  ${valid ? '✓' : '✗ INVALID'}`);
     if (!valid) ok = false;
+
+    // Attempt PDF conversion
+    const pdfPath = convertDocxToPdf(filePath);
+    if (pdfPath && fs.existsSync(pdfPath)) {
+      const pdfSize = fs.statSync(pdfPath).size;
+      console.log(`           ${pdfPath}  (${(pdfSize / 1024).toFixed(1)} KB)  ✓`);
+    }
   }
 
   if (!ok) {

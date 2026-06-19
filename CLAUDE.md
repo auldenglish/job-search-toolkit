@@ -16,10 +16,13 @@ If all checks pass, proceed normally without mentioning the check.
 ---
 
 ## Base Resume
-Stored locally at `resume-base.md` in this project folder. This is the source-of-truth resume Claude reads and maintains.
+The primary source-of-truth resume is `resume-base-v2.md`. This is what `/customize-resume` uses by default.
 
 - **Formatting template** for `.docx` output: the `.docx` file in this folder (user-provided; see setup)
-- **Per-job working copies** are stored in `resumes/` — named `[company]-[role]-[YYYY-MM-DD].md`
+- **Per-job working copies** are organized by company-role:
+  - Working copy path: `resumes/[company-slug]-[role-slug]/[company-slug]-[role-slug]-[YYYY-MM-DD].md`
+  - Example: `resumes/acme-senior-pm/acme-senior-pm-2026-03-09.md`
+  - Final outputs (docx + pdf): same folder as working copy
 - The base resume is **never modified during a customization session** — only at the end, with explicit approval
 
 ## Available Commands
@@ -77,9 +80,24 @@ See `schema.sql`. Key fields: `id` (SERIAL PK), `company`, `role`, `jd_url`, `da
 
 ---
 
-## Docx Generation Notes
+## Document Generation Notes
 
-When generating `.docx` files via the `/docx` skill:
+When generating `.docx` and `.pdf` files via `/customize-resume` or `/docx` skill:
+
+### PDF Generation
+
+After creating `.docx` files, `generate.js` automatically attempts to create `.pdf` versions:
+
+- **Primary method** (cross-platform): `libreoffice` headless conversion
+  - Install on macOS: `brew install libreoffice`
+  - Install on Windows: `choco install libreoffice-still` or download from https://www.libreoffice.org/
+  - Install on Linux: `apt-get install libreoffice`
+
+- **Fallback on Windows**: Uses Word COM automation if LibreOffice is unavailable
+  - Requires Microsoft Word to be installed
+  - Runs silently in the background
+
+If neither method is available, `.docx` files are still generated successfully, but `.pdf` creation is skipped without error.
 
 ### Before first use — check dependencies
 Run `bash install-deps.sh` if this is a fresh clone, or if node/Python steps below fail.

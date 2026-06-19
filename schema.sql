@@ -13,5 +13,6 @@ CREATE TABLE IF NOT EXISTS applications (
   follow_up_date  DATE,
   todos           JSONB DEFAULT '[]',
   comments        JSONB DEFAULT '[]',
+  jd_text         TEXT,
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );

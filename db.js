@@ -36,8 +36,8 @@ async function insert(app) {
     `INSERT INTO applications
       (company, role, jd_url, date_applied, status, closed_reason,
        resume_version, cover_letter, notes, next_activity_date,
-       follow_up_date, todos, comments)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       follow_up_date, todos, comments, jd_text)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
      RETURNING *`,
     [
       app.company,
@@ -53,6 +53,7 @@ async function insert(app) {
       app.follow_up_date || null,
       JSON.stringify(app.todos || []),
       JSON.stringify(app.comments || []),
+      app.jd_text || null,
     ]
   );
   return rows[0];

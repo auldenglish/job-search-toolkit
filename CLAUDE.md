@@ -20,8 +20,10 @@ The primary source-of-truth resume is `resume-base-v2.md`. This is what `/custom
 
 - **Formatting template** for `.docx` output: the `.docx` file in this folder (user-provided; see setup)
 - **Per-job working copies** are organized by company-role:
-  - Working copy path: `resumes/[company-slug]-[role-slug]/[company-slug]-[role-slug]-[YYYY-MM-DD].md`
-  - Example: `resumes/acme-senior-pm/acme-senior-pm-2026-03-09.md`
+  - Folder naming: `resumes/[Company] - [Title] - [YYYY-MM-DD]/` (not kebab-case)
+  - Example: `resumes/Acme - Senior PM - 2026-03-09/`
+  - Working copy file: `[company-slug]-[role-slug]-[YYYY-MM-DD].md` (kebab-case in filename)
+  - Example: `resumes/Acme - Senior PM - 2026-03-09/acme-senior-pm-2026-03-09.md`
   - Final outputs (docx + pdf): same folder as working copy
 - The base resume is **never modified during a customization session** — only at the end, with explicit approval
 
@@ -29,6 +31,8 @@ The primary source-of-truth resume is `resume-base-v2.md`. This is what `/custom
 - `/setup` — First-time onboarding: creates resume and configures the project
 - `/init-docx-template` — One-time setup: extracts formatting from the .docx template and writes `docx-template.js`. Re-run only if the template changes.
 - `/customize-resume` — Tailor the base resume to a specific job description
+  - **Always generates:** formatted .docx + .pdf (both required, no exceptions)
+  - **Then asks:** "Do you also want a Workday-friendly version?" (only if user specifically needs it)
 - `/cover-letter` — Draft a cover letter for a specific role (invoke only when requested)
 
 ## Docx Template Module
@@ -98,6 +102,15 @@ After creating `.docx` files, `generate.js` automatically attempts to create `.p
   - Runs silently in the background
 
 If neither method is available, `.docx` files are still generated successfully, but `.pdf` creation is skipped without error.
+
+**If PDF generation fails silently**, manually generate it:
+```bash
+"/c/Program Files/LibreOffice/program/soffice.exe" --headless --convert-to pdf --outdir "[output-folder]" "[path-to-docx]"
+```
+Example:
+```bash
+"/c/Program Files/LibreOffice/program/soffice.exe" --headless --convert-to pdf --outdir "C:/Users/engli/Claude_Sessions/job_search/resumes/glia-technical-account-manager" "C:/Users/engli/Claude_Sessions/job_search/resumes/glia-technical-account-manager/glia-technical-account-manager-2026-06-22.docx"
+```
 
 ### Before first use — check dependencies
 Run `bash install-deps.sh` if this is a fresh clone, or if node/Python steps below fail.

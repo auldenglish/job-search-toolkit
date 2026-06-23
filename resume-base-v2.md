@@ -40,6 +40,7 @@ Senior Technical Account Manager experienced in serving as the designated techni
 * Maintained high-fidelity customer profiles through investigation and resolution of data discrepancies and quality issues leveraging Snowflake, Databricks and Amperity platform SQL tools — including IDR output forensics, query updates, and resource connection configuration
 * Translates client data requirements into platform configuration and SQL improvements
 * Cut delivery cycle time by >60% on strategic implementations by integrating AI-assisted development; also contributed PRs to an internal MCP connector used to configure client tenants, expanding QA coverage and reducing manual overhead
+* Advanced troubleshooting across SQL, XML, CSV, JSON — utilizing regular expressions, code-level debugging, and data validation techniques to resolve complex SQL query, integration and configuration issues for enterprise customers
 
 ### Senior Technical Account Manager II | Amperity | Seattle, WA (Remote)
 
@@ -72,6 +73,7 @@ Senior Technical Account Manager experienced in serving as the designated techni
 * Coordinated with Engineering and Infrastructure teams during incident response
 * Drove platform adoption and growth through post-implementation delivery, technical demonstrations, and API integration support, enabling customers to identify and execute platform expansion
 * Advocated customer requirements and high-impact bug fixes for roadmap prioritization
+* Advanced troubleshooting across SQL, HTML/CSS, CSV, JSON to resolve complex integration and configuration issues for enterprise customers
 * Configured SAML-based SSO integrations, enabling secure identity federation for large-scale end-user access to the Firstup Platform
 
 ### Senior Business Analyst | Ingeniux | Seattle, WA (Remote)
@@ -97,6 +99,7 @@ Senior Technical Account Manager experienced in serving as the designated techni
 
 **2013 – 2015**
 
+* Rockstar Award recipient, recognizing contributions as Founding TAM in a newly created role — establishing processes, playbooks, and engagement models with no prior blueprint
 * Principal escalation point for high-impact customer issues; served as technical liaison during engineering incident response sessions
 * Managed compliance-critical scenarios related to PCI data handling — educating customer security teams and coordinating remediation, demonstrating expertise in regulated environments
 * Delivered frequent product demonstrations across a rapidly evolving feature set

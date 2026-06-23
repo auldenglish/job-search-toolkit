@@ -1,5 +1,6 @@
 # Personal resume data — stays local
 resume-base.md
+resume-base-old-*.md
 resumes/
 applications.json
 

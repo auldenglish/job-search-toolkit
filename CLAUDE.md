@@ -16,7 +16,7 @@ If all checks pass, proceed normally without mentioning the check.
 ---
 
 ## Base Resume
-The primary source-of-truth resume is `resume-base-v2.md`. This is what `/customize-resume` uses by default.
+The primary source-of-truth resume is `resume-base.md`. This is what `/customize-resume` uses by default.
 
 - **Formatting template** for `.docx` output: the `.docx` file in this folder (user-provided; see setup)
 - **Per-job working copies** are organized by company-role:
@@ -32,7 +32,7 @@ The primary source-of-truth resume is `resume-base-v2.md`. This is what `/custom
 - `/init-docx-template` — One-time setup: extracts formatting from the .docx template and writes `docx-template.js`. Re-run only if the template changes.
 - `/customize-resume` — Tailor the base resume to a specific job description
   - **Always generates:** formatted .docx + .pdf (both required, no exceptions)
-  - **Then asks:** "Do you also want a Workday-friendly version?" (only if user specifically needs it)
+  - **Do not ask about a Workday-friendly version.** The user rarely encounters Workday submissions and will explicitly request one when needed. The capability still exists — generate via `generate.js ... --workday-only` only when the user asks.
 - `/cover-letter` — Draft a cover letter for a specific role (invoke only when requested)
 
 ## Docx Template Module

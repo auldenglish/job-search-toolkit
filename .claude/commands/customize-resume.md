@@ -11,7 +11,7 @@ Tailor a job-specific copy of the base resume to a job description, with full ap
 ## Step 1 — Gather Inputs
 
 1. **Job Description**: Ask for the JD URL. If inaccessible (behind login/paywall), ask user to paste the text or provide a PDF.
-2. **Base resume**: Note that you'll be using `resume-base-v2.md` by default. Ask in Step 2 if the user prefers a different version.
+2. **Base resume**: Note that you'll be using `resume-base.md` by default. Ask in Step 2 if the user prefers a different version.
 
 Do not proceed until the JD is available.
 
@@ -19,7 +19,7 @@ Do not proceed until the JD is available.
 
 ## Step 2 — Create Working Copy
 
-1. **Base resume**: Read `resume-base-v2.md` from the current project folder. If the user wants a different version, ask which one to use instead.
+1. **Base resume**: Read `resume-base.md` from the current project folder. If the user wants a different version, ask which one to use instead.
 
 2. **Company-title subfolder**: Parse the company and role from the user's input (or from the JD) to create a logical folder name. Example:
    - Company: Acme, Role: Senior PM → folder: `resumes/acme-senior-pm/`
@@ -27,7 +27,7 @@ Do not proceed until the JD is available.
 
 3. **Working copy path**: `resumes/[company-slug]-[role-slug]/[company-slug]-[role-slug]-[YYYY-MM-DD].md`
    - Example: `resumes/acme-senior-pm/acme-senior-pm-2026-03-09.md`
-   - Copy all content verbatim from `resume-base-v2.md`
+   - Copy all content verbatim from `resume-base.md`
 
 All edits during this session go into the working copy. **The base resume is never modified during a customization session.**
 
@@ -117,13 +117,9 @@ Wait for user responses. Draft bullets only after the user provides examples. Ap
 
 ## Step 8 — Output Format
 
-Ask which output(s) to produce:
+**Always generate the formatted `.docx` + `.pdf` (default). Do not ask which output to produce, and do not offer a Workday-friendly version.** The user rarely encounters Workday submissions and will explicitly request one when needed.
 
-**A) Formatted .docx** — Styled to match the formatting template.
-
-**B) Workday-friendly .docx** — Plain, ATS-optimized format.
-
-**C) Both**
+Only produce a Workday-friendly `.docx` if the user specifically asks — generate it with `--workday-only`.
 
 ### Generating .docx output
 

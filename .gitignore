@@ -13,9 +13,10 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
-# Generated docx module — user-specific, do not commit
-# Regenerate with /init-docx-template
-docx-template.js
+# NOTE: docx-template.js is now committed (see commit history). It was previously
+# gitignored, but that let branch switches / auto-stashes and stray re-inits
+# clobber it with broken versions. Keep it tracked. Re-run /init-docx-template
+# only if your .docx formatting template actually changes, then commit the result.
 
 # Temp generation scripts
 generate_resume.js

@@ -357,7 +357,10 @@ function convertDocxToPdf(docxPath) {
   try {
     // Try libreoffice (cross-platform)
     try {
-      execSync(`libreoffice --headless --convert-to pdf --outdir "${absDir}" "${absDocx}"`, {
+      const loCmd = process.platform === 'win32'
+        ? `"C:/Program Files/LibreOffice/program/soffice.exe" --headless --convert-to pdf --outdir "${absDir}" "${absDocx}"`
+        : `libreoffice --headless --convert-to pdf --outdir "${absDir}" "${absDocx}"`;
+      execSync(loCmd, {
         stdio: 'pipe',
         timeout: 30000
       });

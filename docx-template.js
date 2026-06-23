@@ -141,6 +141,7 @@ function companyLine(company, location, dateRange) {
   return new Paragraph({
     tabStops: [{ type: TabStopType.RIGHT, position: DATE_TAB }],
     spacing: { before: 200, after: 20 },
+    keepNext: true,  // glue company header to the role/bullets that follow (prevents orphaned heading)
     children,
   });
 }
@@ -161,6 +162,7 @@ function roleLine(role, dateRange, bold = true) {
   }
   return new Paragraph({
     spacing: { before: 100, after: 20 },
+    keepNext: true,  // glue role line to the notes/bullets that follow
     children,
   });
 }
@@ -169,6 +171,7 @@ function roleLine(role, dateRange, bold = true) {
 function italicNote(text) {
   return new Paragraph({
     spacing: { before: 0, after: 20 },
+    keepNext: true,  // glue the highlights/accounts note to the first bullet beneath it
     children: [new TextRun({ text, font: FONT, size: SZ.body, italics: true })],
   });
 }
@@ -180,6 +183,7 @@ function bullet(textOrRuns, { bold = false } = {}) {
     : [new TextRun({ text: textOrRuns, font: FONT, size: SZ.body, bold })];
   return new Paragraph({
     numbering: { reference: 'bullets', level: 0 },
+    keepLines: true,  // don't split a multi-line bullet across a page boundary
     children,
   });
 }
@@ -188,6 +192,7 @@ function bullet(textOrRuns, { bold = false } = {}) {
 function subBullet(text) {
   return new Paragraph({
     numbering: { reference: 'subbullets', level: 0 },
+    keepLines: true,  // don't split a multi-line sub-bullet across a page boundary
     children: [new TextRun({ text, font: FONT, size: SZ.body })],
   });
 }

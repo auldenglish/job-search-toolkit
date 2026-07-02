@@ -34,6 +34,9 @@ app.patch('/api/applications/:id', async (req, res) => {
   }
 });
 
+// Root shows the board
+app.get('/', (req, res) => res.redirect('/kanban.html'));
+
 // Serve kanban.html and any static assets from this folder
 app.use(express.static(__dirname));
 

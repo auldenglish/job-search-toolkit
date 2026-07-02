@@ -67,6 +67,7 @@ Use `db.insert({...})` — the `id` is assigned automatically by SERIAL (no manu
 
 **Valid statuses** — only use these; do not invent new ones:
 - `submitted` — application sent; use this for new submissions at the time of applying
+- `interviewing` — actively in the interview process
 - `in_progress` — resume/materials being prepared, not yet submitted
 - `stalled` — no activity / waiting
 - `closed` — position filled, withdrawn, or rejected

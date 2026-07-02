@@ -7,7 +7,7 @@ const db = require('./db');
 
 const app = express();
 const PORT = 3000;
-const VALID_STATUSES = new Set(['submitted', 'in_progress', 'stalled', 'closed']);
+const VALID_STATUSES = new Set(['submitted', 'interviewing', 'in_progress', 'stalled', 'closed']);
 
 app.use(express.json());
 

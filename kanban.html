@@ -8,7 +8,7 @@
   :root {
     --bg: #0f1420; --panel: #171e2e; --panel2: #1e2740; --text: #e6ebf5;
     --muted: #8b97b0; --border: #2a3552; --accent: #4f8cff;
-    --submitted: #4f8cff; --in_progress: #f0b429; --stalled: #8b97b0; --closed: #e5546a; --other: #a06bff;
+    --submitted: #4f8cff; --interviewing: #2fb37e; --in_progress: #f0b429; --stalled: #8b97b0; --closed: #e5546a; --other: #a06bff;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
@@ -78,8 +78,9 @@
 
 <script>
 const STATUSES = [
-  { key: 'submitted',   label: 'Submitted' },
-  { key: 'in_progress', label: 'In Progress' },
+  { key: 'submitted',    label: 'Submitted' },
+  { key: 'interviewing', label: 'Interviewing' },
+  { key: 'in_progress',  label: 'In Progress' },
   { key: 'stalled',     label: 'Stalled' },
   { key: 'closed',      label: 'Closed' },
 ];

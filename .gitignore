@@ -4,6 +4,9 @@ resume-base-old-*.md
 resumes/
 applications.json
 
+# Archived/duplicate base-resume versions + personal exports (local only)
+_personal/
+
 # Resume files (personal)
 *.docx
 *.pdf

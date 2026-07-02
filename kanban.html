@@ -53,9 +53,21 @@
   /* modal */
   .overlay { position: fixed; inset: 0; background: rgba(16,24,40,.45); display: none; align-items: center; justify-content: center; z-index: 20; }
   .overlay.open { display: flex; }
-  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; width: min(560px, 92vw); max-height: 88vh; overflow: auto; padding: 20px 22px; box-shadow: 0 12px 40px rgba(16,24,40,.18); }
+  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; width: min(920px, 95vw); max-height: 90vh; overflow: auto; padding: 20px 22px; box-shadow: 0 12px 40px rgba(16,24,40,.18); }
+  .modal-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
   .modal h2 { margin: 0 0 2px; font-size: 18px; }
-  .modal .sub { color: var(--muted); margin-bottom: 16px; }
+  .modal .sub { color: var(--muted); }
+  .modal-x { margin-left: auto; background: transparent; border: none; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; padding: 0 4px; }
+  .modal-x:hover { color: var(--text); }
+  .modal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .modal-left, .modal-right { min-width: 0; }
+  .section-title { font-weight: 650; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 2px 0 10px; }
+  .stub { color: var(--muted); border: 1px dashed var(--border); border-radius: 10px; padding: 18px; text-align: center; font-size: 13px; margin-bottom: 18px; }
+  .toggle-more { background: transparent; border: none; color: var(--accent); cursor: pointer; padding: 4px 0 0; font-size: 12px; }
+  .check-inline { display: flex; align-items: center; gap: 8px; }
+  .check-inline input[type=checkbox] { width: 16px; height: 16px; flex: none; margin: 0; }
+  .check-inline label { margin: 0 !important; }
+  @media (max-width: 720px) { .modal-body { grid-template-columns: 1fr; } }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
   .field input, .field select, .field textarea { width: 100%; background: #fff; color: var(--text);
@@ -223,36 +235,92 @@ function cardEl(a, status) {
   return el;
 }
 
+// Canonical closed reasons; any existing non-standard value is preserved as an option.
+const CLOSED_REASONS = ['Rejected', 'Rejected – phone screen', 'Rejected – midstream', 'No offer', 'Ghosted', 'Withdrew', 'Position filled', 'Other'];
+
 function openModal(a) {
-  const overlay = document.getElementById('overlay');
-  document.getElementById('modal').innerHTML =
-    `<h2>${esc(a.company)}</h2><div class="sub">${esc(a.role)} &middot; #${a.id}</div>` +
-    `<div class="row">` +
-      `<div class="field"><label>Status</label><select id="f-status">` +
-        STATUSES.map(s => `<option value="${s.key}" ${s.key===a.status?'selected':''}>${s.label}</option>`).join('') +
-      `</select></div>` +
-      `<div class="field"><label>Date applied</label><input id="f-date" value="${fmtDate(a.date_applied)}" placeholder="YYYY-MM-DD"></div>` +
-    `</div>` +
-    `<div class="field"><label>Resume version</label><input id="f-resume" value="${esc(a.resume_version)}"></div>` +
-    `<div class="field"><label>JD URL</label><input id="f-jd" value="${esc(a.jd_url)}"></div>` +
-    (a.jd_url ? `<div class="field" style="margin-top:-8px"><a href="${esc(a.jd_url)}" target="_blank" rel="noopener">Open job posting ↗</a></div>` : '') +
-    `<div class="field"><label>Notes</label><textarea id="f-notes">${esc(a.notes)}</textarea></div>` +
-    `<div class="modal-actions">` +
-      `<button onclick="closeModal()">Cancel</button>` +
-      `<button class="btn-primary" onclick="saveModal(${a.id})">Save</button>` +
-    `</div>`;
-  overlay.classList.add('open');
+  const opts = [...CLOSED_REASONS];
+  if (a.closed_reason && !opts.includes(a.closed_reason)) opts.unshift(a.closed_reason);
+  const closedReasonOpts = ['<option value="">—</option>',
+    ...opts.map(r => `<option ${r === a.closed_reason ? 'selected' : ''}>${esc(r)}</option>`)].join('');
+
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-head">
+      <div><h2>${esc(a.company)}</h2><div class="sub">${esc(a.role)} &middot; #${a.id}</div></div>
+      <button class="modal-x" onclick="closeModal()" title="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-left">
+        <div class="row">
+          <div class="field"><label>Status</label><select id="f-status" onchange="onStatusChange()">${
+            STATUSES.map(s => `<option value="${s.key}" ${s.key === a.status ? 'selected' : ''}>${s.label}</option>`).join('')
+          }</select></div>
+          <div class="field"><label>Date applied</label><input id="f-date" value="${fmtDate(a.date_applied)}" placeholder="YYYY-MM-DD"></div>
+        </div>
+        <div id="closed-fields" style="display:none">
+          <div class="field"><label>Closed reason</label><select id="f-closedreason">${closedReasonOpts}</select></div>
+          <div class="field"><label>Closure description</label><textarea id="f-closuredesc" style="min-height:60px">${esc(a.closure_description)}</textarea></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Added on</label><input id="f-added" value="${fmtDate(a.created_at)}" data-orig="${fmtDate(a.created_at)}" placeholder="YYYY-MM-DD"></div>
+          <div class="field"><label>Next activity</label><input id="f-next" value="${a.next_activity_date ? fmtDate(a.next_activity_date) : ''}" placeholder="YYYY-MM-DD"></div>
+        </div>
+        <div class="field"><label>Resume version</label><input id="f-resume" value="${esc(a.resume_version)}"></div>
+        <div class="field check-inline"><input type="checkbox" id="f-cl" ${a.cover_letter ? 'checked' : ''}><label style="margin:0">Cover letter sent</label></div>
+        <div class="field"><label>JD URL</label><input id="f-jd" value="${esc(a.jd_url)}"></div>
+        ${a.jd_url ? `<div class="field" style="margin-top:-6px"><a href="${esc(a.jd_url)}" target="_blank" rel="noopener">Open job posting ↗</a></div>` : ''}
+        <div class="field"><label>JD text</label><textarea id="f-jdtext" rows="2">${esc(a.jd_text)}</textarea>
+          <button type="button" class="toggle-more" id="jd-toggle" onclick="toggleJd()">Show more</button></div>
+        <div class="field"><label>Notes</label><textarea id="f-notes">${esc(a.notes)}</textarea></div>
+      </div>
+      <div class="modal-right">
+        <div class="section-title">Checklist</div>
+        <div class="stub">Checklist — coming next</div>
+        <div class="section-title">Comments</div>
+        <div class="stub">Comments — coming next</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveModal(${a.id})">Save</button>
+    </div>`;
+  onStatusChange();
+  document.getElementById('overlay').classList.add('open');
 }
 function closeModal() { document.getElementById('overlay').classList.remove('open'); }
 
+// Closed reason / description only apply when Status = Closed.
+function onStatusChange() {
+  document.getElementById('closed-fields').style.display =
+    document.getElementById('f-status').value === 'closed' ? '' : 'none';
+}
+function toggleJd() {
+  const ta = document.getElementById('f-jdtext'), btn = document.getElementById('jd-toggle');
+  const expanded = ta.rows > 2;
+  ta.rows = expanded ? 2 : 14;
+  btn.textContent = expanded ? 'Show more' : 'Show less';
+}
+
 async function saveModal(id) {
+  const v = elId => document.getElementById(elId).value.trim();
+  const status = document.getElementById('f-status').value;
   const fields = {
-    status: document.getElementById('f-status').value,
-    date_applied: document.getElementById('f-date').value.trim() || null,
-    resume_version: document.getElementById('f-resume').value.trim() || null,
-    jd_url: document.getElementById('f-jd').value.trim() || null,
+    status,
+    date_applied: v('f-date') || null,
+    next_activity_date: v('f-next') || null,
+    resume_version: v('f-resume') || null,
+    cover_letter: document.getElementById('f-cl').checked,
+    jd_url: v('f-jd') || null,
+    jd_text: document.getElementById('f-jdtext').value.trim() || null,
     notes: document.getElementById('f-notes').value,
   };
+  const addedEl = document.getElementById('f-added');
+  const added = addedEl.value.trim();
+  if (added && added !== addedEl.dataset.orig) fields.created_at = added;  // only when actually changed, so the full timestamp is preserved otherwise
+  if (status === 'closed') {
+    fields.closed_reason = v('f-closedreason') || null;
+    fields.closure_description = v('f-closuredesc') || null;
+  }
   closeModal();
   await save(id, fields, 'Saved');
 }

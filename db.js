@@ -60,7 +60,8 @@ async function insert(app) {
 }
 
 async function update(id, fields) {
-  const SKIP = new Set(['id', 'created_at']);
+  // created_at is intentionally updatable (the kanban card lets you set "Added on" manually).
+  const SKIP = new Set(['id']);
   const entries = Object.entries(fields).filter(([k]) => !SKIP.has(k));
   if (entries.length === 0) return getById(id);
 

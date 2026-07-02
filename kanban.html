@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Job Search — Kanban</title>
+<style>
+  :root {
+    --bg: #0f1420; --panel: #171e2e; --panel2: #1e2740; --text: #e6ebf5;
+    --muted: #8b97b0; --border: #2a3552; --accent: #4f8cff;
+    --submitted: #4f8cff; --in_progress: #f0b429; --stalled: #8b97b0; --closed: #e5546a; --other: #a06bff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.45 system-ui, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 20px;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 650; }
+  header .total { color: var(--muted); font-size: 13px; }
+  header .spacer { flex: 1; }
+  button { font: inherit; color: var(--text); background: var(--panel2);
+    border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  #board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 18px 20px; align-items: start; }
+  .col { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; min-height: 120px; display: flex; flex-direction: column; }
+  .col.drop { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .col-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border); font-weight: 600; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .col-head .count { margin-left: auto; color: var(--muted); font-weight: 500; }
+  .cards { padding: 10px; display: flex; flex-direction: column; gap: 9px; min-height: 40px; }
+  .card { background: var(--panel2); border: 1px solid var(--border); border-left-width: 3px;
+    border-radius: 9px; padding: 10px 11px; cursor: grab; }
+  .card:active { cursor: grabbing; }
+  .card.dragging { opacity: .45; }
+  .card .co { font-weight: 640; }
+  .card .role { color: var(--muted); font-size: 13px; margin-top: 1px; }
+  .card .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 7px; font-size: 11.5px; color: var(--muted); }
+  .card .tag { background: #0e1524; border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; }
+  .empty { color: var(--muted); font-size: 12.5px; text-align: center; padding: 14px 8px; }
+  /* modal */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 20; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; width: min(560px, 92vw); max-height: 88vh; overflow: auto; padding: 20px 22px; }
+  .modal h2 { margin: 0 0 2px; font-size: 18px; }
+  .modal .sub { color: var(--muted); margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+  .field input, .field select, .field textarea { width: 100%; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font: inherit; }
+  .field textarea { min-height: 90px; resize: vertical; }
+  .row { display: flex; gap: 12px; }
+  .row .field { flex: 1; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); }
+  .btn-danger { color: var(--closed); }
+  a { color: var(--accent); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 15px;
+    opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Job Search — Kanban</h1>
+  <span class="total" id="total"></span>
+  <span class="spacer"></span>
+  <button onclick="load()">↻ Refresh</button>
+</header>
+
+<div id="board"></div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STATUSES = [
+  { key: 'submitted',   label: 'Submitted' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'stalled',     label: 'Stalled' },
+  { key: 'closed',      label: 'Closed' },
+];
+const CANON = STATUSES.map(s => s.key);
+let APPS = [];
+
+// Canonical columns first, then a column for any out-of-spec status found in the
+// data (e.g. "interviewing") so no card is ever hidden.
+function columns() {
+  const extra = [...new Set(APPS.map(a => a.status))].filter(s => !CANON.includes(s));
+  return [
+    ...STATUSES,
+    ...extra.map(k => ({ key: k, label: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), extra: true })),
+  ];
+}
+const colorFor = k => CANON.includes(k) ? `var(--${k})` : 'var(--other)';
+
+const fmtDate = d => d ? String(d).slice(0, 10) : '—';
+const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function load() {
+  const res = await fetch('/api/applications');
+  APPS = await res.json();
+  render();
+}
+
+function render() {
+  document.getElementById('total').textContent = `${APPS.length} applications`;
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  const cols = columns();
+  board.style.gridTemplateColumns = `repeat(${cols.length}, 1fr)`;
+  for (const s of cols) {
+    const items = APPS.filter(a => a.status === s.key);
+    const col = document.createElement('div');
+    col.className = 'col';
+    col.dataset.status = s.key;
+    col.innerHTML =
+      `<div class="col-head"><span class="dot" style="background:${colorFor(s.key)}"></span>${s.label}` +
+      `<span class="count">${items.length}</span></div>` +
+      `<div class="cards"></div>`;
+    const cards = col.querySelector('.cards');
+    if (!items.length) cards.innerHTML = '<div class="empty">no cards</div>';
+    for (const a of items) cards.appendChild(cardEl(a, s.key));
+    // drop handlers
+    col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drop'); });
+    col.addEventListener('dragleave', () => col.classList.remove('drop'));
+    col.addEventListener('drop', async e => {
+      e.preventDefault(); col.classList.remove('drop');
+      const id = Number(e.dataTransfer.getData('text/plain'));
+      const app = APPS.find(a => a.id === id);
+      if (app && app.status !== s.key) await save(id, { status: s.key }, `${app.company} → ${s.label}`);
+    });
+    board.appendChild(col);
+  }
+}
+
+function cardEl(a, status) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.style.borderLeftColor = colorFor(status);
+  el.draggable = true;
+  el.innerHTML =
+    `<div class="co">${esc(a.company)}</div>` +
+    `<div class="role">${esc(a.role)}</div>` +
+    `<div class="meta">` +
+      `<span class="tag">#${a.id}</span>` +
+      `<span class="tag">${fmtDate(a.date_applied)}</span>` +
+      (a.cover_letter ? '<span class="tag">✉ CL</span>' : '') +
+      (a.jd_url ? '<span class="tag">JD</span>' : '') +
+    `</div>`;
+  el.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', a.id); el.classList.add('dragging'); });
+  el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  el.addEventListener('click', () => openModal(a));
+  return el;
+}
+
+function openModal(a) {
+  const overlay = document.getElementById('overlay');
+  document.getElementById('modal').innerHTML =
+    `<h2>${esc(a.company)}</h2><div class="sub">${esc(a.role)} &middot; #${a.id}</div>` +
+    `<div class="row">` +
+      `<div class="field"><label>Status</label><select id="f-status">` +
+        STATUSES.map(s => `<option value="${s.key}" ${s.key===a.status?'selected':''}>${s.label}</option>`).join('') +
+      `</select></div>` +
+      `<div class="field"><label>Date applied</label><input id="f-date" value="${fmtDate(a.date_applied)}" placeholder="YYYY-MM-DD"></div>` +
+    `</div>` +
+    `<div class="field"><label>Resume version</label><input id="f-resume" value="${esc(a.resume_version)}"></div>` +
+    `<div class="field"><label>JD URL</label><input id="f-jd" value="${esc(a.jd_url)}"></div>` +
+    (a.jd_url ? `<div class="field" style="margin-top:-8px"><a href="${esc(a.jd_url)}" target="_blank" rel="noopener">Open job posting ↗</a></div>` : '') +
+    `<div class="field"><label>Notes</label><textarea id="f-notes">${esc(a.notes)}</textarea></div>` +
+    `<div class="modal-actions">` +
+      `<button onclick="closeModal()">Cancel</button>` +
+      `<button class="btn-primary" onclick="saveModal(${a.id})">Save</button>` +
+    `</div>`;
+  overlay.classList.add('open');
+}
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+
+async function saveModal(id) {
+  const fields = {
+    status: document.getElementById('f-status').value,
+    date_applied: document.getElementById('f-date').value.trim() || null,
+    resume_version: document.getElementById('f-resume').value.trim() || null,
+    jd_url: document.getElementById('f-jd').value.trim() || null,
+    notes: document.getElementById('f-notes').value,
+  };
+  closeModal();
+  await save(id, fields, 'Saved');
+}
+
+async function save(id, fields, msg) {
+  try {
+    const res = await fetch(`/api/applications/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields),
+    });
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    await load();
+    toast(msg || 'Saved');
+  } catch (e) { toast('Error: ' + e.message); }
+}
+
+let toastTimer;
+function toast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+load();
+</script>
+</body>
+</html>

@@ -137,9 +137,9 @@ const CANON = STATUSES.map(s => s.key);
 let APPS = [];
 
 // Canonical columns first, then a column for any out-of-spec status found in the
-// data (e.g. "interviewing") so no card is ever hidden.
+// data (e.g. "interviewing") so no card is ever hidden. Skip null/undefined statuses.
 function columns() {
-  const extra = [...new Set(APPS.map(a => a.status))].filter(s => !CANON.includes(s));
+  const extra = [...new Set(APPS.map(a => a.status))].filter(s => s && !CANON.includes(s));
   return [
     ...STATUSES,
     ...extra.map(k => ({ key: k, label: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), extra: true })),
@@ -157,7 +157,7 @@ function orderedColumns() {
   const byKey = Object.fromEntries(cols.map(c => [c.key, c]));
   const order = (COL_ORDER || []).filter(k => byKey[k]);
   for (const c of cols) if (!order.includes(c.key)) order.push(c.key);
-  return order.map(k => byKey[k]);
+  return order.map(k => byKey[k]).filter(c => c);  // drop any null/undefined columns
 }
 function reorderColumns(fromKey, toKey) {
   if (fromKey === toKey) return;

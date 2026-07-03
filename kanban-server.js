@@ -20,6 +20,23 @@ app.get('/api/applications', async (req, res) => {
   }
 });
 
+// POST new application
+app.post('/api/applications', async (req, res) => {
+  try {
+    const { company, role, status, date_applied } = req.body;
+    if (!company || !role) return res.status(400).json({ error: 'company and role required' });
+    const app = await db.insert({
+      company,
+      role,
+      status: status || 'submitted',
+      date_applied: date_applied || null,
+    });
+    res.status(201).json(app);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // PATCH an application (status change from drag-drop, or edited fields from the modal)
 app.patch('/api/applications/:id', async (req, res) => {
   try {

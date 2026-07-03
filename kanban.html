@@ -113,8 +113,12 @@
   .cm-actions button { padding: 6px 12px; font-size: 12px; }
   .cm-list { display: flex; flex-direction: column-reverse; gap: 8px; }
   .cm-item { background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
-  .cm-item .cm-text { font-size: 12.5px; line-height: 1.5; margin-bottom: 4px; }
+  .cm-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
   .cm-item .cm-meta { font-size: 11px; color: var(--muted); }
+  .cm-item-actions { display: flex; gap: 6px; }
+  .cm-item-btn { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0 3px; }
+  .cm-item-btn:hover { color: var(--text); }
+  .cm-item .cm-text { font-size: 12.5px; line-height: 1.5; }
   .cm-empty { color: var(--muted); font-size: 12.5px; padding: 4px; }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
@@ -138,6 +142,7 @@
   <h1>Job Search — Kanban</h1>
   <span class="total" id="total"></span>
   <span class="spacer"></span>
+  <button onclick="openNewModal()" style="background:var(--accent);color:#fff;border-color:var(--accent)">+ New</button>
   <button onclick="load()">↻ Refresh</button>
 </header>
 
@@ -283,8 +288,20 @@ function cardEl(a, status) {
   return el;
 }
 
-// Canonical closed reasons; any existing non-standard value is preserved as an option.
-const CLOSED_REASONS = ['Rejected', 'Rejected – phone screen', 'Rejected – midstream', 'No offer', 'Ghosted', 'Withdrew', 'Position filled', 'Other'];
+// Canonical closed reasons (chronological order); any existing non-standard value is preserved as an option.
+const CLOSED_REASONS = [
+  'Rejected',
+  'Ghosted - post application',
+  'Rejected - phone screen',
+  'Ghosted - post phone screen',
+  'Rejected - midstream',
+  'Ghosted - midstream',
+  'Ghosted - post interviews',
+  'No Offer',
+  'Position Filled',
+  'Withdrew',
+  'Other',
+];
 
 function openModal(a) {
   modalApp = a;
@@ -342,6 +359,48 @@ function openModal(a) {
   document.getElementById('overlay').classList.add('open');
 }
 function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+
+function openNewModal() {
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-head">
+      <div><h2>New Application</h2></div>
+      <button class="modal-x" onclick="closeModal()" title="Close">&times;</button>
+    </div>
+    <div style="display:grid;gap:16px">
+      <div class="field"><label>Company</label><input id="new-company" placeholder="Company name" autofocus></div>
+      <div class="field"><label>Role</label><input id="new-role" placeholder="Job title"></div>
+      <div class="field"><label>Status</label><select id="new-status">${
+        STATUSES.map(s => `<option value="${s.key}">${s.label}</option>`).join('')
+      }</select></div>
+      <div class="field"><label>Date applied</label><input id="new-date" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="createNew()">Create</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('new-company').focus();
+}
+
+async function createNew() {
+  const company = document.getElementById('new-company').value.trim();
+  const role = document.getElementById('new-role').value.trim();
+  const status = document.getElementById('new-status').value;
+  const date = document.getElementById('new-date').value || null;
+  if (!company || !role) { toast('Company and role are required'); return; }
+
+  try {
+    const res = await fetch('/api/applications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company, role, status, date_applied: date }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    closeModal();
+    await load();
+    toast('Application created');
+  } catch (e) { toast('Error: ' + e.message); }
+}
 
 // Closed reason / description only apply when Status = Closed.
 function onStatusChange() {
@@ -601,13 +660,30 @@ function renderComments() {
   MCOMMENTS.forEach(cm => {
     const item = document.createElement('div');
     item.className = 'cm-item';
-    const text = document.createElement('div');
-    text.className = 'cm-text';
-    text.innerHTML = cm.html;
+
+    // header: timestamp + edit/delete buttons
+    const header = document.createElement('div');
+    header.className = 'cm-item-header';
     const meta = document.createElement('div');
     meta.className = 'cm-meta';
     meta.textContent = fmtTime(cm.createdAt) + (cm.editedAt ? ' (edited)' : '');
-    item.append(text, meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'cm-item-actions';
+    const editBtn = document.createElement('button');
+    editBtn.className = 'cm-item-btn'; editBtn.textContent = 'Edit'; editBtn.type = 'button';
+    editBtn.addEventListener('click', () => editComment(cm));
+    const delBtn = document.createElement('button');
+    delBtn.className = 'cm-item-btn'; delBtn.textContent = '✕'; delBtn.type = 'button';
+    delBtn.addEventListener('click', () => deleteComment(cm.id));
+    actions.append(editBtn, delBtn);
+    header.append(meta, actions);
+
+    const text = document.createElement('div');
+    text.className = 'cm-text';
+    text.innerHTML = cm.html;
+
+    item.append(header, text);
     list.appendChild(item);
   });
   c.appendChild(list);
@@ -618,6 +694,20 @@ function submitComment() {
   if (!html) return;
   MCOMMENTS.unshift({ id: uid(), html, createdAt: new Date().toISOString(), editedAt: null });
   ed.innerHTML = '';
+  saveComments();
+}
+function editComment(cm) {
+  const ed = document.getElementById('cm-editor');
+  ed.innerHTML = cm.html;
+  ed.focus();
+  // remove the comment from the list so "Submit" creates a new one; user can manually delete the old one if they want
+  // or we could replace-in-place, but edit via delete+new is simpler and preserves full timestamps
+  MCOMMENTS = MCOMMENTS.filter(c => c.id !== cm.id);
+  renderComments();
+}
+function deleteComment(cmId) {
+  if (!confirm('Delete this comment?')) return;
+  MCOMMENTS = MCOMMENTS.filter(c => c.id !== cmId);
   saveComments();
 }
 async function saveComments() {

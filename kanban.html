@@ -68,6 +68,30 @@
   .check-inline input[type=checkbox] { width: 16px; height: 16px; flex: none; margin: 0; }
   .check-inline label { margin: 0 !important; }
   @media (max-width: 720px) { .modal-body { grid-template-columns: 1fr; } }
+  /* checklist */
+  #checklist { font-size: 13.5px; }
+  .cl-list { display: flex; flex-direction: column; gap: 1px; }
+  .cl-item { display: flex; align-items: center; gap: 7px; padding: 3px 4px; border-radius: 6px; }
+  .cl-item:hover { background: var(--panel2); }
+  .cl-item.dragging { opacity: .4; }
+  .cl-item.child { margin-left: 26px; }
+  .cl-grip { color: var(--muted); cursor: grab; flex: none; font-size: 12px; opacity: .45; letter-spacing: -2px; }
+  .cl-grip:active { cursor: grabbing; }
+  .cl-box { width: 16px; height: 16px; border: 2px solid var(--muted); border-radius: 4px; cursor: pointer; flex: none;
+    display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+  .cl-box.inprogress { background: var(--accent); border-color: var(--accent); }
+  .cl-box.done { background: var(--accent); border-color: var(--accent); }
+  .cl-box.done::after { content: '✓'; color: #fff; font-size: 11px; line-height: 1; }
+  .cl-text { flex: 1; border: none; background: transparent; color: var(--text); font: inherit; padding: 2px 4px; border-radius: 4px; min-width: 0; }
+  .cl-text:focus { outline: 1px solid var(--border); background: #fff; }
+  .cl-item.done-item .cl-text { text-decoration: line-through; color: var(--muted); }
+  .cl-btn { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 0 3px; font-size: 14px; flex: none; opacity: 0; line-height: 1; }
+  .cl-item:hover .cl-btn { opacity: 1; }
+  .cl-btn:hover { color: var(--text); }
+  .cl-add { display: flex; gap: 8px; margin-top: 8px; }
+  .cl-add input { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font: inherit; background: #fff; color: var(--text); min-width: 0; }
+  .cl-completed-header { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 16px 0 6px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .cl-empty { color: var(--muted); font-size: 12.5px; padding: 4px; }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
   .field input, .field select, .field textarea { width: 100%; background: #fff; color: var(--text);
@@ -239,6 +263,9 @@ function cardEl(a, status) {
 const CLOSED_REASONS = ['Rejected', 'Rejected – phone screen', 'Rejected – midstream', 'No offer', 'Ghosted', 'Withdrew', 'Position filled', 'Other'];
 
 function openModal(a) {
+  modalApp = a;
+  MTODOS = normalizeTodos(a.todos);
+  MTODOS.forEach(t => { if (t.subtasks && t.subtasks.length) recomputeParent(t); });
   const opts = [...CLOSED_REASONS];
   if (a.closed_reason && !opts.includes(a.closed_reason)) opts.unshift(a.closed_reason);
   const closedReasonOpts = ['<option value="">—</option>',
@@ -275,8 +302,8 @@ function openModal(a) {
       </div>
       <div class="modal-right">
         <div class="section-title">Checklist</div>
-        <div class="stub">Checklist — coming next</div>
-        <div class="section-title">Comments</div>
+        <div id="checklist"></div>
+        <div class="section-title" style="margin-top:20px">Comments</div>
         <div class="stub">Comments — coming next</div>
       </div>
     </div>
@@ -285,6 +312,7 @@ function openModal(a) {
       <button class="btn-primary" onclick="saveModal(${a.id})">Save</button>
     </div>`;
   onStatusChange();
+  renderChecklist();
   document.getElementById('overlay').classList.add('open');
 }
 function closeModal() { document.getElementById('overlay').classList.remove('open'); }
@@ -323,6 +351,169 @@ async function saveModal(id) {
   }
   closeModal();
   await save(id, fields, 'Saved');
+}
+
+// ---------- Checklist (stored in the todos JSONB) ----------
+let modalApp = null, MTODOS = [], clDrag = null;
+const uid = () => Math.random().toString(36).slice(2, 12);
+
+function normalizeTodos(arr) {
+  const norm = it => ({ id: it.id || uid(), text: it.text || '', completed: !!it.completed,
+    completedAt: it.completedAt || null, inProgress: !!it.inProgress });
+  return (arr || []).map(it => ({ ...norm(it), subtasks: (it.subtasks || []).map(norm) }));
+}
+function setState(item, s) {
+  item.completed = s === 'done';
+  item.inProgress = s === 'in_progress';
+  item.completedAt = s === 'done' ? (item.completedAt || new Date().toISOString()) : null;
+}
+function cycle(item) {                                   // tri-state: todo → in-progress → done → todo
+  if (item.completed) setState(item, 'todo');
+  else if (item.inProgress) setState(item, 'done');
+  else setState(item, 'in_progress');
+}
+function recomputeParent(p) {                            // parent state derived from its children
+  const kids = p.subtasks || [];
+  if (!kids.length) return;
+  const allDone = kids.every(k => k.completed);
+  const anyStarted = kids.some(k => k.completed || k.inProgress);
+  p.completed = allDone;
+  p.completedAt = allDone ? (p.completedAt || new Date().toISOString()) : null;
+  p.inProgress = !allDone && anyStarted;
+}
+function onCheck(item, parent) {
+  if (parent) {                                          // child: cycle, then roll up to parent
+    cycle(item);
+    recomputeParent(parent);
+  } else if (item.subtasks && item.subtasks.length) {    // parent w/ children: complete-all / reset-all
+    const target = item.completed ? 'todo' : 'done';
+    item.subtasks.forEach(k => setState(k, target));
+    recomputeParent(item);
+  } else {                                               // leaf top-level: cycle
+    cycle(item);
+  }
+  saveTodos();
+}
+function addTopItem() {
+  const inp = document.getElementById('cl-add-input');
+  const t = inp.value.trim();
+  if (!t) return;
+  MTODOS.push({ id: uid(), text: t, completed: false, completedAt: null, inProgress: false, subtasks: [] });
+  inp.value = '';
+  saveTodos();
+  const ni = document.getElementById('cl-add-input'); if (ni) ni.focus();
+}
+function addSubItem(parent) {
+  parent.subtasks = parent.subtasks || [];
+  const child = { id: uid(), text: '', completed: false, completedAt: null, inProgress: false };
+  parent.subtasks.push(child);
+  recomputeParent(parent);
+  renderChecklist();                                     // local only; persists once text is entered
+  setTimeout(() => { const el = document.querySelector(`.cl-item[data-id="${child.id}"] .cl-text`); if (el) el.focus(); }, 0);
+}
+function removeItem(item, parent) {
+  if (parent) { parent.subtasks = (parent.subtasks || []).filter(s => s.id !== item.id); recomputeParent(parent); }
+  else { MTODOS = MTODOS.filter(t => t.id !== item.id); }
+}
+function reorderWithin(parentId, fromId, toId) {
+  const arr = parentId ? (MTODOS.find(t => t.id === parentId) || {}).subtasks || [] : MTODOS;
+  const fi = arr.findIndex(x => x.id === fromId), ti = arr.findIndex(x => x.id === toId);
+  if (fi < 0 || ti < 0 || fi === ti) return;
+  const [m] = arr.splice(fi, 1);
+  arr.splice(ti, 0, m);
+  saveTodos();
+}
+function itemRow(item, parent) {
+  const row = document.createElement('div');
+  row.className = 'cl-item' + (parent ? ' child' : '') + (item.completed ? ' done-item' : '');
+  row.dataset.id = item.id;
+
+  const grip = document.createElement('span');
+  grip.className = 'cl-grip'; grip.textContent = '⠿'; grip.draggable = true;
+  grip.addEventListener('dragstart', e => {
+    clDrag = { id: item.id, parent: parent ? parent.id : '' }; row.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', item.id); e.dataTransfer.effectAllowed = 'move';
+  });
+  grip.addEventListener('dragend', () => { row.classList.remove('dragging'); clDrag = null; });
+
+  const box = document.createElement('span');
+  box.className = 'cl-box' + (item.completed ? ' done' : (item.inProgress ? ' inprogress' : ''));
+  box.addEventListener('click', () => onCheck(item, parent));
+
+  const input = document.createElement('input');
+  input.className = 'cl-text'; input.value = item.text; input.placeholder = 'List item…';
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
+  input.addEventListener('change', () => { item.text = input.value.trim(); if (!item.text) removeItem(item, parent); saveTodos(); });
+
+  row.append(grip, box, input);
+  if (!parent) {
+    const addSub = document.createElement('button');
+    addSub.className = 'cl-btn'; addSub.textContent = '＋'; addSub.title = 'Add sub-item';
+    addSub.addEventListener('click', () => addSubItem(item));
+    row.append(addSub);
+  }
+  const del = document.createElement('button');
+  del.className = 'cl-btn'; del.textContent = '×'; del.title = 'Delete';
+  del.addEventListener('click', () => { removeItem(item, parent); saveTodos(); });
+  row.append(del);
+
+  row.addEventListener('dragover', e => { if (clDrag) e.preventDefault(); });
+  row.addEventListener('drop', e => {
+    e.preventDefault();
+    if (!clDrag) return;
+    if (clDrag.parent !== (parent ? parent.id : '')) return;   // reorder within the same level only
+    reorderWithin(parent ? parent.id : '', clDrag.id, item.id);
+  });
+  return row;
+}
+function renderList(container, items) {
+  for (const it of items) {
+    container.appendChild(itemRow(it, null));
+    for (const k of (it.subtasks || [])) container.appendChild(itemRow(k, it));
+  }
+}
+function renderChecklist() {
+  const c = document.getElementById('checklist');
+  if (!c) return;
+  c.innerHTML = '';
+  const active = MTODOS.filter(t => !t.completed);
+  const done = MTODOS.filter(t => t.completed);
+
+  const list = document.createElement('div');
+  list.className = 'cl-list';
+  if (!active.length && !done.length) list.innerHTML = '<div class="cl-empty">No checklist items yet.</div>';
+  renderList(list, active);
+  c.appendChild(list);
+
+  const add = document.createElement('div');
+  add.className = 'cl-add';
+  add.innerHTML = '<input id="cl-add-input" placeholder="Add checklist item…">';
+  const btn = document.createElement('button');
+  btn.className = 'btn-primary'; btn.textContent = 'Add'; btn.style.padding = '6px 12px';
+  btn.addEventListener('click', addTopItem);
+  add.querySelector('input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTopItem(); } });
+  add.appendChild(btn);
+  c.appendChild(add);
+
+  if (done.length) {
+    const h = document.createElement('div');
+    h.className = 'cl-completed-header'; h.textContent = `Completed (${done.length})`;
+    c.appendChild(h);
+    const dlist = document.createElement('div');
+    dlist.className = 'cl-list';
+    renderList(dlist, done);
+    c.appendChild(dlist);
+  }
+}
+async function saveTodos() {
+  renderChecklist();
+  try {
+    const res = await fetch(`/api/applications/${modalApp.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ todos: MTODOS }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const inApps = APPS.find(x => x.id === modalApp.id); if (inApps) inApps.todos = MTODOS;
+  } catch (e) { toast('Checklist save failed: ' + e.message); }
 }
 
 async function save(id, fields, msg) {

@@ -19,7 +19,7 @@ Do not proceed until the JD is available.
 
 ## Step 2 — Create Working Copy
 
-1. **Base resume**: Read `resume-base.md` from the current project folder. If the user wants a different version, ask which one to use instead.
+1. **Base resume selection**: Use `AskUserQuestion` to present a clickable list of all `resume_base*.md` files found in the `_personal` folder (glob pattern: `_personal/resume_base*.md`). Let the user select which version to use as the source. If only one exists, use it without prompting.
 
 2. **Company-title subfolder**: Parse the company and role from the user's input (or from the JD) to create a logical folder name. Example:
    - Company: Acme, Role: Senior PM → folder: `resumes/acme-senior-pm/`
@@ -27,7 +27,7 @@ Do not proceed until the JD is available.
 
 3. **Working copy path**: `resumes/[company-slug]-[role-slug]/[company-slug]-[role-slug]-[YYYY-MM-DD].md`
    - Example: `resumes/acme-senior-pm/acme-senior-pm-2026-03-09.md`
-   - Copy all content verbatim from `resume-base.md`
+   - Copy all content verbatim from the selected base resume
 
 All edits during this session go into the working copy. **The base resume is never modified during a customization session.**
 
@@ -84,22 +84,34 @@ Apply all reordering automatically and proceed to Step 6. Do not wait for approv
 
 ## Step 6 — Suggested Revisions
 
-Propose edits to existing bullets that would better align with the JD. Present each as a before/after table:
+Propose edits to existing bullets that would better align with the JD. For each revision, include identifying context:
 
-| | Content |
-|---|---|
-| **EXISTING** | [exact current text] |
-| **SUGGESTED** | [proposed revision] |
-| **Why** | [brief rationale tied to JD language] |
+```
+**REVISION [number]**
+- **Experience:** [Job Title] | [Company] ([date range])
+- **Bullet [#] of [total]**
+- **EXISTING:** [exact current text]
+- **SUGGESTED:** [proposed revision]
+- **Why:** [rationale]
+```
+
+**Important — Quote Accuracy**: When writing rationales, cite only actual passages from the JD provided by the user. Search the JD text for exact phrases matching your suggestion. If an exact quote doesn't exist:
+- Do not cite an invented or paraphrased quote
+- Either acknowledge the paraphrase explicitly (e.g., "JD emphasizes X (from '[actual quote]' section)"), or
+- Skip the suggestion entirely if it isn't grounded in the actual JD text
 
 For entirely new bullets not in the resume, label them:
-> **NEW (suggested):** [proposed bullet]
-> **Why:** [rationale]
+```
+**NEW (suggested):** [proposed bullet]
+- **Experience:** [Job Title] | [Company]
+- **Why:** [rationale tied to actual JD language]
+```
 
 Rules:
 - Never silently change anything
 - User may approve, reject, or modify each suggestion
 - Apply only approved changes to the working copy
+- Only suggest changes backed by actual JD text, not paraphrase or invention
 
 ---
 

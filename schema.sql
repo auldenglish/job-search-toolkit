@@ -16,3 +16,11 @@ CREATE TABLE IF NOT EXISTS applications (
   jd_text         TEXT,
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS events (
+  id              SERIAL PRIMARY KEY,
+  app_id          INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+  event_date      DATE NOT NULL,
+  note            TEXT NOT NULL,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);

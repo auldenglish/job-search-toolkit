@@ -53,14 +53,18 @@
   /* modal */
   .overlay { position: fixed; inset: 0; background: rgba(16,24,40,.45); display: none; align-items: center; justify-content: center; z-index: 20; }
   .overlay.open { display: flex; }
-  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; width: min(920px, 95vw); max-height: 90vh; overflow: auto; padding: 20px 22px; box-shadow: 0 12px 40px rgba(16,24,40,.18); }
-  .modal-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; width: min(920px, 95vw); height: 90vh; display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(16,24,40,.18); }
+  .modal-head { display: flex; align-items: center; gap: 12px; padding: 16px 22px; margin-bottom: 0; border-bottom: 1px solid var(--border); flex: 0 0 auto; }
+  .modal-head > div:first-child { flex: 1; }
   .modal h2 { margin: 0 0 2px; font-size: 18px; }
   .modal .sub { color: var(--muted); }
   .modal-x { margin-left: auto; background: transparent; border: none; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; padding: 0 4px; }
   .modal-x:hover { color: var(--text); }
-  .modal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .modal-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px 22px; overflow: auto; flex: 1 1 auto; }
   .modal-left, .modal-right { min-width: 0; }
+  .modal-head button { padding: 7px 12px; font-size: 13px; }
+  .modal-head .btn-primary { margin-left: 8px; }
+  .modal-head .modal-x { margin-left: auto; }
   .section-title { font-weight: 650; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 2px 0 10px; }
   .stub { color: var(--muted); border: 1px dashed var(--border); border-radius: 10px; padding: 18px; text-align: center; font-size: 13px; margin-bottom: 18px; }
   .toggle-more { background: transparent; border: none; color: var(--accent); cursor: pointer; padding: 4px 0 0; font-size: 12px; }
@@ -120,6 +124,21 @@
   .cm-item-btn:hover { color: var(--text); }
   .cm-item .cm-text { font-size: 12.5px; line-height: 1.5; }
   .cm-empty { color: var(--muted); font-size: 12.5px; padding: 4px; }
+  /* events */
+  #events { font-size: 13px; }
+  .ev-add { display: flex; gap: 8px; margin-bottom: 12px; }
+  .ev-add input[type=date] { flex: 0 0 120px; border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font: inherit; background: #fff; color: var(--text); }
+  .ev-add input[type=text] { flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; font: inherit; background: #fff; color: var(--text); min-width: 0; }
+  .ev-add button { padding: 6px 12px; font-size: 12px; }
+  .ev-list { display: flex; flex-direction: column; gap: 8px; }
+  .ev-item { background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+  .ev-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .ev-date { font-weight: 600; font-size: 13px; color: var(--accent); }
+  .ev-note { font-size: 13px; color: var(--text); line-height: 1.4; }
+  .ev-actions { display: flex; gap: 6px; }
+  .ev-btn { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0 3px; }
+  .ev-btn:hover { color: var(--text); }
+  .ev-empty { color: var(--muted); font-size: 12.5px; padding: 4px; }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
   .field input, .field select, .field textarea { width: 100%; background: #fff; color: var(--text);
@@ -127,7 +146,6 @@
   .field textarea { min-height: 90px; resize: vertical; }
   .row { display: flex; gap: 12px; }
   .row .field { flex: 1; }
-  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
   .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .btn-danger { color: var(--closed); }
   a { color: var(--accent); }
@@ -135,6 +153,27 @@
     background: #1b2230; color: #fff; border: 1px solid #1b2230; border-radius: 8px; padding: 9px 15px;
     opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
   .toast.show { opacity: 1; }
+  /* search bar */
+  #search-bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 48px; z-index: 5; }
+  #search-bar input { flex: 1; max-width: 400px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; color: var(--text); background: #fff; }
+  #search-bar input:focus { outline: none; border-color: var(--accent); }
+  #search-bar button { padding: 7px 12px; font-size: 13px; }
+  .search-result-count { color: var(--muted); font-size: 13px; }
+  /* advanced search modal */
+  #advanced-search-modal { display: none; }
+  #advanced-search-modal.open { display: flex; }
+  #advanced-search-modal .modal { width: min(1200px, 95vw); max-height: 90vh; }
+  .search-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .search-results-grid { overflow-x: auto; width: 100%; }
+  .search-results-grid table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .search-results-grid th { background: var(--panel2); border: 1px solid var(--border); padding: 10px; text-align: left; font-weight: 600; cursor: pointer; user-select: none; }
+  .search-results-grid th:hover { background: var(--bg); }
+  .search-results-grid th.sorted::after { content: ' ▼'; font-size: 10px; }
+  .search-results-grid td { border: 1px solid var(--border); padding: 10px; }
+  .search-results-grid tr:hover { background: var(--panel2); }
+  .search-results-grid tr:nth-child(even) { background: #fafbfc; }
+  .search-results-grid tbody tr { cursor: pointer; }
+  .search-results-grid tbody tr:hover { background: var(--border); }
 </style>
 </head>
 <body>
@@ -146,7 +185,38 @@
   <button onclick="load()">↻ Refresh</button>
 </header>
 
+<div id="search-bar">
+  <input type="text" id="quick-search-input" placeholder="Search by company, role, or JD..." autocomplete="off">
+  <button onclick="clearQuickSearch()">Clear</button>
+  <button onclick="openAdvancedSearch()" style="color:var(--accent)">Advanced Search</button>
+  <span class="search-result-count" id="search-count"></span>
+</div>
+
 <div id="board"></div>
+
+<div class="overlay" id="advanced-search-modal" onclick="if(event.target===this)closeAdvancedSearch()">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h2>Advanced Search</h2></div>
+      <button class="modal-x" onclick="closeAdvancedSearch()" title="Close">&times;</button>
+    </div>
+    <div class="search-filters">
+      <div class="field"><label>Company</label><input id="asearch-company" placeholder="Search company"></div>
+      <div class="field"><label>Job Title</label><input id="asearch-role" placeholder="Search role"></div>
+      <div class="field"><label>JD Text</label><input id="asearch-jd" placeholder="Search job description"></div>
+      <div class="field"><label>Status</label><select id="asearch-status"><option value="">All statuses</option><option value="submitted">Submitted</option><option value="interviewing">Interviewing</option><option value="in_progress">In Progress</option><option value="stalled">Stalled</option><option value="closed">Closed</option></select></div>
+      <div class="field"><label>From Date</label><input id="asearch-from" type="date"></div>
+      <div class="field"><label>To Date</label><input id="asearch-to" type="date"></div>
+    </div>
+    <div id="search-results-container" style="margin-bottom:20px">
+      <div style="color:var(--muted);font-size:13px;margin-bottom:10px">Results: <span id="asearch-count">0</span></div>
+      <div class="search-results-grid" id="search-results-grid"></div>
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeAdvancedSearch()">Close</button>
+    </div>
+  </div>
+</div>
 
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modal"></div>
@@ -203,6 +273,8 @@ function toggleCollapse(key) {
 }
 
 let drag = null; // {kind:'card', id} | {kind:'col', key}
+let SEARCH_FILTER = null; // null = show all, otherwise filter by this set of IDs
+let SEARCH_SORT = { field: 'date_applied', order: 'desc' }; // for advanced search grid
 
 const fmtDate = d => d ? String(d).slice(0, 10) : '—';
 const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -210,7 +282,142 @@ const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({'&':'&am
 async function load() {
   const res = await fetch('/api/applications');
   APPS = await res.json();
+  SEARCH_FILTER = null;
+  document.getElementById('quick-search-input').value = '';
+  updateSearchCount();
   render();
+}
+
+// --- Quick Search ---
+function getSearchableText(app) {
+  return `${app.company} ${app.role} ${app.jd_text || ''}`.toLowerCase();
+}
+
+function debounce(fn, ms) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), ms);
+  };
+}
+
+const performQuickSearch = debounce(() => {
+  const query = document.getElementById('quick-search-input').value.trim().toLowerCase();
+  if (!query) {
+    SEARCH_FILTER = null;
+  } else {
+    SEARCH_FILTER = new Set(APPS.filter(a => getSearchableText(a).includes(query)).map(a => a.id));
+  }
+  updateSearchCount();
+  render();
+}, 300);
+
+function clearQuickSearch() {
+  document.getElementById('quick-search-input').value = '';
+  SEARCH_FILTER = null;
+  updateSearchCount();
+  render();
+}
+
+function updateSearchCount() {
+  const el = document.getElementById('search-count');
+  if (!SEARCH_FILTER) {
+    el.textContent = '';
+  } else {
+    el.textContent = `${SEARCH_FILTER.size} of ${APPS.length}`;
+  }
+}
+
+// --- Advanced Search ---
+function openAdvancedSearch() {
+  document.getElementById('advanced-search-modal').classList.add('open');
+  performAdvancedSearch();
+}
+
+function closeAdvancedSearch() {
+  document.getElementById('advanced-search-modal').classList.remove('open');
+}
+
+async function performAdvancedSearch() {
+  const company = document.getElementById('asearch-company').value.trim();
+  const role = document.getElementById('asearch-role').value.trim();
+  const jd_text = document.getElementById('asearch-jd').value.trim();
+  const status = document.getElementById('asearch-status').value.trim();
+  const date_from = document.getElementById('asearch-from').value.trim();
+  const date_to = document.getElementById('asearch-to').value.trim();
+
+  const params = new URLSearchParams();
+  if (company) params.append('company', company);
+  if (role) params.append('role', role);
+  if (jd_text) params.append('jd_text', jd_text);
+  if (status) params.append('status', status);
+  if (date_from) params.append('date_from', date_from);
+  if (date_to) params.append('date_to', date_to);
+
+  try {
+    const res = await fetch(`/api/applications/search?${params.toString()}`);
+    const results = await res.json();
+    renderSearchResults(results);
+  } catch (e) {
+    toast('Search error: ' + e.message);
+  }
+}
+
+function renderSearchResults(results) {
+  const count = document.getElementById('asearch-count');
+  count.textContent = results.length;
+
+  const container = document.getElementById('search-results-grid');
+  if (results.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">No results found</div>';
+    return;
+  }
+
+  // Sort results
+  const sorted = [...results].sort((a, b) => {
+    let aVal = a[SEARCH_SORT.field];
+    let bVal = b[SEARCH_SORT.field];
+    if (aVal == null) aVal = '';
+    if (bVal == null) bVal = '';
+    const cmp = String(aVal).localeCompare(String(bVal));
+    return SEARCH_SORT.order === 'asc' ? cmp : -cmp;
+  });
+
+  const thead = `
+    <thead>
+      <tr>
+        <th onclick="setSortField('company')">Company ${SEARCH_SORT.field === 'company' ? '▼' : ''}</th>
+        <th onclick="setSortField('role')">Job Title ${SEARCH_SORT.field === 'role' ? '▼' : ''}</th>
+        <th onclick="setSortField('date_applied')">Applied ${SEARCH_SORT.field === 'date_applied' ? '▼' : ''}</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+  `;
+
+  const tbody = `
+    <tbody>
+      ${sorted.map(a => `
+        <tr onclick="openModal(APPS.find(x => x.id === ${a.id}))">
+          <td>${esc(a.company)}</td>
+          <td>${esc(a.role)}</td>
+          <td>${fmtDate(a.date_applied)}</td>
+          <td><span class="tag" style="background:${colorFor(a.status)};color:#fff;border:none">${a.status}</span></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+
+  container.innerHTML = `<table>${thead}${tbody}</table>`;
+}
+
+function setSortField(field) {
+  if (SEARCH_SORT.field === field) {
+    SEARCH_SORT.order = SEARCH_SORT.order === 'asc' ? 'desc' : 'asc';
+  } else {
+    SEARCH_SORT.field = field;
+    SEARCH_SORT.order = 'asc';
+  }
+  performAdvancedSearch();
 }
 
 function render() {
@@ -221,7 +428,8 @@ function render() {
   board.style.gridTemplateColumns = cols.map(c => COLLAPSED.has(c.key) ? '48px' : 'minmax(0,1fr)').join(' ');
   for (const s of cols) {
     const collapsed = COLLAPSED.has(s.key);
-    const items = APPS.filter(a => a.status === s.key);
+    let items = APPS.filter(a => a.status === s.key);
+    if (SEARCH_FILTER) items = items.filter(a => SEARCH_FILTER.has(a.id));
     const col = document.createElement('div');
     col.className = 'col' + (collapsed ? ' collapsed' : '');
     col.dataset.status = s.key;
@@ -303,11 +511,12 @@ const CLOSED_REASONS = [
   'Other',
 ];
 
-function openModal(a) {
+async function openModal(a) {
   modalApp = a;
   MTODOS = normalizeTodos(a.todos);
   MTODOS.forEach(t => { if (t.subtasks && t.subtasks.length) recomputeParent(t); });
   MCOMMENTS = normalizeComments(a.comments);
+  await loadEvents(a.id);
   const opts = [...CLOSED_REASONS];
   if (a.closed_reason && !opts.includes(a.closed_reason)) opts.unshift(a.closed_reason);
   const closedReasonOpts = ['<option value="">—</option>',
@@ -316,6 +525,8 @@ function openModal(a) {
   document.getElementById('modal').innerHTML = `
     <div class="modal-head">
       <div><h2>${esc(a.company)}</h2><div class="sub">${esc(a.role)} &middot; #${a.id}</div></div>
+      <button onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveModal(${a.id})">Save</button>
       <button class="modal-x" onclick="closeModal()" title="Close">&times;</button>
     </div>
     <div class="modal-body">
@@ -343,17 +554,16 @@ function openModal(a) {
         <div class="field"><label>Notes</label><textarea id="f-notes">${esc(a.notes)}</textarea></div>
       </div>
       <div class="modal-right">
-        <div class="section-title">Checklist</div>
+        <div class="section-title">Events</div>
+        <div id="events"></div>
+        <div class="section-title" style="margin-top:20px">Checklist</div>
         <div id="checklist"></div>
         <div class="section-title" style="margin-top:20px">Comments</div>
         <div id="comments"></div>
       </div>
-    </div>
-    <div class="modal-actions">
-      <button onclick="closeModal()">Cancel</button>
-      <button class="btn-primary" onclick="saveModal(${a.id})">Save</button>
     </div>`;
   onStatusChange();
+  renderEvents();
   renderChecklist();
   renderComments();
   document.getElementById('overlay').classList.add('open');
@@ -434,8 +644,8 @@ async function saveModal(id) {
     fields.closed_reason = v('f-closedreason') || null;
     fields.closure_description = v('f-closuredesc') || null;
   }
-  closeModal();
   await save(id, fields, 'Saved');
+  closeModal();
 }
 
 // ---------- Checklist (stored in the todos JSONB) ----------
@@ -601,6 +811,127 @@ async function saveTodos() {
   } catch (e) { toast('Checklist save failed: ' + e.message); }
 }
 
+// ---------- Events (stored in a separate events table) ----------
+let MEVENTS = [];
+
+async function loadEvents(appId) {
+  try {
+    const res = await fetch(`/api/events/${appId}`);
+    MEVENTS = await res.json();
+  } catch (e) {
+    console.error('Failed to load events:', e);
+    MEVENTS = [];
+  }
+}
+
+function renderEvents() {
+  const e = document.getElementById('events');
+  if (!e) return;
+  e.innerHTML = '';
+
+  // add new event form
+  const addForm = document.createElement('div');
+  addForm.className = 'ev-add';
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.id = 'ev-date';
+  const noteInput = document.createElement('input');
+  noteInput.type = 'text';
+  noteInput.id = 'ev-note';
+  noteInput.placeholder = 'e.g., Phone Screen';
+  const addBtn = document.createElement('button');
+  addBtn.textContent = 'Add';
+  addBtn.type = 'button';
+  addBtn.addEventListener('click', () => addEvent());
+  addForm.append(dateInput, noteInput, addBtn);
+  e.appendChild(addForm);
+
+  // events list (newest first)
+  const list = document.createElement('div');
+  list.className = 'ev-list';
+  if (!MEVENTS.length) list.innerHTML = '<div class="ev-empty">No events yet.</div>';
+  [...MEVENTS].sort((a, b) => new Date(b.event_date) - new Date(a.event_date)).forEach(ev => {
+    const item = document.createElement('div');
+    item.className = 'ev-item';
+
+    const header = document.createElement('div');
+    header.className = 'ev-item-header';
+    const date = document.createElement('div');
+    date.className = 'ev-date';
+    date.textContent = fmtDate(ev.event_date);
+    const actions = document.createElement('div');
+    actions.className = 'ev-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'ev-btn';
+    editBtn.textContent = '✎';
+    editBtn.title = 'Edit';
+    editBtn.addEventListener('click', () => editEvent(ev));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'ev-btn';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Delete';
+    delBtn.addEventListener('click', () => deleteEvent(ev.id));
+
+    actions.append(editBtn, delBtn);
+    header.append(date, actions);
+
+    const note = document.createElement('div');
+    note.className = 'ev-note';
+    note.textContent = ev.note;
+
+    item.append(header, note);
+    list.appendChild(item);
+  });
+  e.appendChild(list);
+}
+
+async function addEvent() {
+  const dateInput = document.getElementById('ev-date');
+  const noteInput = document.getElementById('ev-note');
+  const date = dateInput.value;
+  const note = noteInput.value.trim();
+  if (!date || !note) return;
+  try {
+    const res = await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ app_id: modalApp.id, event_date: date, note }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    const newEvent = await res.json();
+    MEVENTS.push(newEvent);
+    dateInput.value = '';
+    noteInput.value = '';
+    renderEvents();
+  } catch (e) {
+    toast('Event add failed: ' + e.message);
+  }
+}
+
+function editEvent(ev) {
+  const dateInput = document.getElementById('ev-date');
+  const noteInput = document.getElementById('ev-note');
+  dateInput.value = ev.event_date;
+  noteInput.value = ev.note;
+  noteInput.focus();
+  MEVENTS = MEVENTS.filter(e => e.id !== ev.id);
+  renderEvents();
+}
+
+async function deleteEvent(evId) {
+  if (!confirm('Delete this event?')) return;
+  try {
+    const res = await fetch(`/api/events/${evId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    MEVENTS = MEVENTS.filter(e => e.id !== evId);
+    renderEvents();
+  } catch (e) {
+    toast('Event delete failed: ' + e.message);
+  }
+}
+
 // ---------- Comments (stored in the comments JSONB) ----------
 let MCOMMENTS = [];
 
@@ -738,6 +1069,15 @@ function toast(m) {
   t.textContent = m; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
+
+// Quick search event listener
+document.getElementById('quick-search-input').addEventListener('input', performQuickSearch);
+
+// Advanced search filter listeners
+['asearch-company', 'asearch-role', 'asearch-jd', 'asearch-status', 'asearch-from', 'asearch-to'].forEach(id => {
+  document.getElementById(id).addEventListener('input', performAdvancedSearch);
+  document.getElementById(id).addEventListener('change', performAdvancedSearch);
+});
 
 load();
 </script>

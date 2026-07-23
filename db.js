@@ -87,4 +87,83 @@ async function nextId() {
   return parseInt(rows[0].id);
 }
 
-module.exports = { query, getAll, getById, insert, update, nextId };
+async function search(filters = {}) {
+  const whereClauses = [];
+  const params = [];
+  let paramIndex = 1;
+
+  if (filters.company) {
+    whereClauses.push(`company ILIKE $${paramIndex}`);
+    params.push(`%${filters.company}%`);
+    paramIndex++;
+  }
+
+  if (filters.role) {
+    whereClauses.push(`role ILIKE $${paramIndex}`);
+    params.push(`%${filters.role}%`);
+    paramIndex++;
+  }
+
+  if (filters.jd_text) {
+    whereClauses.push(`jd_text ILIKE $${paramIndex}`);
+    params.push(`%${filters.jd_text}%`);
+    paramIndex++;
+  }
+
+  if (filters.q) {
+    // Quick search: match company, role, or jd_text
+    whereClauses.push(`(company ILIKE $${paramIndex} OR role ILIKE $${paramIndex} OR jd_text ILIKE $${paramIndex})`);
+    params.push(`%${filters.q}%`);
+    paramIndex++;
+  }
+
+  if (filters.status) {
+    whereClauses.push(`status = $${paramIndex}`);
+    params.push(filters.status);
+    paramIndex++;
+  }
+
+  if (filters.date_from) {
+    whereClauses.push(`date_applied >= $${paramIndex}`);
+    params.push(filters.date_from);
+    paramIndex++;
+  }
+
+  if (filters.date_to) {
+    whereClauses.push(`date_applied <= $${paramIndex}`);
+    params.push(filters.date_to);
+    paramIndex++;
+  }
+
+  const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+  const sql = `SELECT * FROM applications ${whereClause} ORDER BY date_applied DESC, id DESC`;
+
+  return query(sql, params);
+}
+
+async function getEventsByAppId(appId) {
+  return query('SELECT * FROM events WHERE app_id = $1 ORDER BY event_date DESC', [appId]);
+}
+
+async function insertEvent(appId, eventDate, note) {
+  const rows = await query(
+    `INSERT INTO events (app_id, event_date, note) VALUES ($1, $2, $3) RETURNING *`,
+    [appId, eventDate, note]
+  );
+  return rows[0];
+}
+
+async function updateEvent(id, eventDate, note) {
+  const rows = await query(
+    `UPDATE events SET event_date = $1, note = $2 WHERE id = $3 RETURNING *`,
+    [eventDate, note, id]
+  );
+  return rows[0] || null;
+}
+
+async function deleteEvent(id) {
+  const rows = await query('DELETE FROM events WHERE id = $1 RETURNING *', [id]);
+  return rows[0] || null;
+}
+
+module.exports = { query, getAll, getById, insert, update, nextId, search, getEventsByAppId, insertEvent, updateEvent, deleteEvent };

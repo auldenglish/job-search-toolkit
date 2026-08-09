@@ -525,6 +525,7 @@ async function openModal(a) {
   document.getElementById('modal').innerHTML = `
     <div class="modal-head">
       <div><h2>${esc(a.company)}</h2><div class="sub">${esc(a.role)} &middot; #${a.id}</div></div>
+      <button class="btn-danger" onclick="deleteApplication(${a.id})" title="Delete this application">Delete</button>
       <button onclick="closeModal()">Cancel</button>
       <button class="btn-primary" onclick="saveModal(${a.id})">Save</button>
       <button class="modal-x" onclick="closeModal()" title="Close">&times;</button>
@@ -648,6 +649,17 @@ async function saveModal(id) {
   }
   await save(id, fields, 'Saved');
   closeModal();
+}
+
+async function deleteApplication(id) {
+  if (!confirm('Are you sure you want to delete this application? This cannot be undone.')) return;
+  try {
+    const res = await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    closeModal();
+    await load();
+    toast('Application deleted');
+  } catch (e) { toast('Error: ' + e.message); }
 }
 
 // ---------- Checklist (stored in the todos JSONB) ----------

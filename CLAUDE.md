@@ -27,6 +27,14 @@ The primary source-of-truth resume is `resume-base.md`. This is what `/customize
   - Final outputs (docx + pdf): same folder as working copy
 - The base resume is **never modified during a customization session** — only at the end, with explicit approval
 
+### Multiple Base Resume Versions
+When `/customize-resume` is invoked, **always** present available base resumes as clickable options:
+- Scan `_personal/` directory for `.md` files (these are alternate base resumes, e.g., industry-specific, experience-focused variants)
+- If `_personal/` exists and contains `.md` files, present them as numbered options using AskUserQuestion
+- Always include `resume-base.md` as the first option (marked as primary)
+- User selects one; that becomes the base for the customization
+- If `_personal/` is empty or doesn't exist, silently use `resume-base.md` as the default
+
 ## Available Commands
 - `/setup` — First-time onboarding: creates resume and configures the project
 - `/init-docx-template` — One-time setup: extracts formatting from the .docx template and writes `docx-template.js`. Re-run only if the template changes.

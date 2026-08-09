@@ -535,15 +535,15 @@ async function openModal(a) {
           <div class="field"><label>Status</label><select id="f-status" onchange="onStatusChange()">${
             STATUSES.map(s => `<option value="${s.key}" ${s.key === a.status ? 'selected' : ''}>${s.label}</option>`).join('')
           }</select></div>
-          <div class="field"><label>Date applied</label><input id="f-date" value="${fmtDate(a.date_applied)}" placeholder="YYYY-MM-DD"></div>
+          <div class="field"><label>Date applied</label><input id="f-date" type="date" value="${fmtDate(a.date_applied)}"></div>
         </div>
         <div id="closed-fields" style="display:none">
           <div class="field"><label>Closed reason</label><select id="f-closedreason">${closedReasonOpts}</select></div>
           <div class="field"><label>Closure description</label><textarea id="f-closuredesc" style="min-height:60px">${esc(a.closure_description)}</textarea></div>
         </div>
         <div class="row">
-          <div class="field"><label>Added on</label><input id="f-added" value="${fmtDate(a.created_at)}" data-orig="${fmtDate(a.created_at)}" placeholder="YYYY-MM-DD"></div>
-          <div class="field"><label>Next activity</label><input id="f-next" value="${a.next_activity_date ? fmtDate(a.next_activity_date) : ''}" placeholder="YYYY-MM-DD"></div>
+          <div class="field"><label>Added on</label><input id="f-added" type="date" value="${fmtDate(a.created_at)}" data-orig="${fmtDate(a.created_at)}"></div>
+          <div class="field"><label>Next activity</label><input id="f-next" type="date" value="${a.next_activity_date ? fmtDate(a.next_activity_date) : ''}"></div>
         </div>
         <div class="field"><label>Resume version</label><input id="f-resume" value="${esc(a.resume_version)}"></div>
         <div class="field check-inline"><input type="checkbox" id="f-cl" ${a.cover_letter ? 'checked' : ''}><label style="margin:0">Cover letter sent</label></div>
@@ -576,15 +576,16 @@ function openNewModal() {
       <div><h2>New Application</h2></div>
       <button class="modal-x" onclick="closeModal()" title="Close">&times;</button>
     </div>
-    <div style="display:grid;gap:16px">
+    <div style="display:grid;gap:16px;padding:20px 22px">
       <div class="field"><label>Company</label><input id="new-company" placeholder="Company name" autofocus></div>
       <div class="field"><label>Role</label><input id="new-role" placeholder="Job title"></div>
+      <div class="field"><label>JD URL</label><input id="new-jd" placeholder="https://..."></div>
       <div class="field"><label>Status</label><select id="new-status">${
         STATUSES.map(s => `<option value="${s.key}">${s.label}</option>`).join('')
       }</select></div>
       <div class="field"><label>Date applied</label><input id="new-date" type="date"></div>
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions" style="padding:0 22px 20px 22px">
       <button onclick="closeModal()">Cancel</button>
       <button class="btn-primary" onclick="createNew()">Create</button>
     </div>`;
@@ -595,6 +596,7 @@ function openNewModal() {
 async function createNew() {
   const company = document.getElementById('new-company').value.trim();
   const role = document.getElementById('new-role').value.trim();
+  const jd_url = document.getElementById('new-jd').value.trim() || null;
   const status = document.getElementById('new-status').value;
   const date = document.getElementById('new-date').value || null;
   if (!company || !role) { toast('Company and role are required'); return; }
@@ -603,7 +605,7 @@ async function createNew() {
     const res = await fetch('/api/applications', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company, role, status, date_applied: date }),
+      body: JSON.stringify({ company, role, jd_url, status, date_applied: date }),
     });
     if (!res.ok) throw new Error((await res.json()).error || res.statusText);
     closeModal();
@@ -813,6 +815,7 @@ async function saveTodos() {
 
 // ---------- Events (stored in a separate events table) ----------
 let MEVENTS = [];
+let MEVENT_EDIT = null; // tracks the event being edited, if any
 
 async function loadEvents(appId) {
   try {
@@ -840,10 +843,22 @@ function renderEvents() {
   noteInput.id = 'ev-note';
   noteInput.placeholder = 'e.g., Phone Screen';
   const addBtn = document.createElement('button');
-  addBtn.textContent = 'Add';
+  addBtn.textContent = MEVENT_EDIT ? 'Save Event' : 'Add';
   addBtn.type = 'button';
   addBtn.addEventListener('click', () => addEvent());
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.type = 'button';
+  cancelBtn.style.display = MEVENT_EDIT ? 'inline-block' : 'none';
+  cancelBtn.addEventListener('click', () => { MEVENT_EDIT = null; renderEvents(); });
+
+  if (MEVENT_EDIT) {
+    dateInput.value = MEVENT_EDIT.event_date;
+    noteInput.value = MEVENT_EDIT.note;
+  }
+
   addForm.append(dateInput, noteInput, addBtn);
+  if (MEVENT_EDIT) addForm.append(cancelBtn);
   e.appendChild(addForm);
 
   // events list (newest first)
@@ -894,30 +909,40 @@ async function addEvent() {
   const note = noteInput.value.trim();
   if (!date || !note) return;
   try {
-    const res = await fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ app_id: modalApp.id, event_date: date, note }),
-    });
-    if (!res.ok) throw new Error((await res.json()).error || res.statusText);
-    const newEvent = await res.json();
-    MEVENTS.push(newEvent);
+    if (MEVENT_EDIT) {
+      const res = await fetch(`/api/events/${MEVENT_EDIT.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_date: date, note }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+      const updated = await res.json();
+      MEVENTS = MEVENTS.map(e => e.id === MEVENT_EDIT.id ? updated : e);
+      MEVENT_EDIT = null;
+      toast('Event updated');
+    } else {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ app_id: modalApp.id, event_date: date, note }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+      const newEvent = await res.json();
+      MEVENTS.push(newEvent);
+      toast('Event added');
+    }
     dateInput.value = '';
     noteInput.value = '';
     renderEvents();
   } catch (e) {
-    toast('Event add failed: ' + e.message);
+    toast('Event save failed: ' + e.message);
   }
 }
 
 function editEvent(ev) {
-  const dateInput = document.getElementById('ev-date');
-  const noteInput = document.getElementById('ev-note');
-  dateInput.value = ev.event_date;
-  noteInput.value = ev.note;
-  noteInput.focus();
-  MEVENTS = MEVENTS.filter(e => e.id !== ev.id);
+  MEVENT_EDIT = ev;
   renderEvents();
+  document.getElementById('ev-note').focus();
 }
 
 async function deleteEvent(evId) {
@@ -925,6 +950,7 @@ async function deleteEvent(evId) {
   try {
     const res = await fetch(`/api/events/${evId}`, { method: 'DELETE' });
     if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+    if (MEVENT_EDIT && MEVENT_EDIT.id === evId) MEVENT_EDIT = null;
     MEVENTS = MEVENTS.filter(e => e.id !== evId);
     renderEvents();
   } catch (e) {

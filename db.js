@@ -166,4 +166,9 @@ async function deleteEvent(id) {
   return rows[0] || null;
 }
 
-module.exports = { query, getAll, getById, insert, update, nextId, search, getEventsByAppId, insertEvent, updateEvent, deleteEvent };
+async function deleteApplication(id) {
+  const rows = await query('DELETE FROM applications WHERE id = $1 RETURNING *', [id]);
+  return rows[0] || null;
+}
+
+module.exports = { query, getAll, getById, insert, update, nextId, search, getEventsByAppId, insertEvent, updateEvent, deleteEvent, deleteApplication };

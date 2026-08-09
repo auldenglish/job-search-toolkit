@@ -70,6 +70,17 @@ app.patch('/api/applications/:id', async (req, res) => {
   }
 });
 
+// DELETE an application
+app.delete('/api/applications/:id', async (req, res) => {
+  try {
+    const deleted = await db.deleteApplication(parseInt(req.params.id, 10));
+    if (!deleted) return res.status(404).json({ error: 'application not found' });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET events for an application
 app.get('/api/events/:app_id', async (req, res) => {
   try {
